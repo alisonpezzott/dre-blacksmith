@@ -21,6 +21,7 @@ O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro
 - [Validação](#validação)
 - [IDs do ambiente e segurança](#ids-do-ambiente-e-segurança)
 - [Limitações conhecidas](#limitações-conhecidas)
+- [Licença](#licença)
 
 ---
 
@@ -328,3 +329,9 @@ Roteiro de demonstração sugerido: seção 11 do [CLAUDE.md](CLAUDE.md).
 - O teste `scripts/validate-visual.spec.mjs`, que vem do template, falha no vitest atual ("Cannot spy on export"). O script `validate:visual` em si funciona.
 - A `culture` do modelo é `en-US`, porque o serviço não deixa trocar o idioma de um modelo existente. Os formatos são explícitos (`R$`, `%`), e o app formata em pt-BR.
 - O plano B (relatório Power BI com visual Sankey do AppSource) está descrito na seção 10 do [CLAUDE.md](CLAUDE.md), mas não foi implementado.
+
+---
+
+## Licença
+
+[MIT](LICENSE). O código herdado do template de Fabric Apps da Microsoft, em `app_blacksmith_dre/`, mantém a licença MIT original ([app_blacksmith_dre/LICENSE](app_blacksmith_dre/LICENSE)).
