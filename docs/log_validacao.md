@@ -80,3 +80,16 @@ Template `dataapp` (Rayfin CLI 1.36.2). A conexão com o `sm_blacksmith_dre` é 
 | 2026-10-23 | Lint: `use-semantic-model-query.ts` (hook do template, não usado pelo app) e teste `scripts/validate-visual.spec.mjs` do template | — | 1 erro de lint e 1 teste falhando, ambos do template | registrado |
 | 2026-10-23 | No portal: KPIs batem com a seção 1, Sankey de mar/2025 e abr/2025, 2025 sem prejuízo, troca para orçado, drill de nó | conforme seção 8.6 | conferido no portal pelo dono do projeto | ok |
 | 2026-10-23 | Estados de loading, vazio e erro; layout em 1440, 1024 e 390 px | ok | conferido no portal pelo dono do projeto | ok |
+
+### Tema IBM Carbon e filtragem cruzada
+
+Paleta e tipografia trocadas pelo IBM Carbon (escuro g100 padrão, claro g10 no cabeçalho; IBM Plex Sans/Mono) e filtragem cruzada entre os visuais (seções 8.4.1 e 9 do CLAUDE.md).
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-23 | `validar:consultas` com os recortes de filtragem cruzada (mar+abr/2025 por seleção, abr/2025 filtrando regiões, Sankey de mar/2025 por seleção, Sudeste em abr/2025, origem não se filtra) | 0 falhas | 183 verificações, 0 falhas | ok |
+| 2026-10-23 | `validate:visual` com seleção (tendência por mês e por região, regiões com filtro + seleção, detalhe do nó) | todos renderizam, meses em ordem | 4/4; eixo Jan a Dez/2025 em ordem | ok |
+| 2026-10-23 | Testes unitários (`vitest run`): seleção cruzada no construtor de filtros e nos eventos dos visuais | sem falhas novas | 70 ok; só o teste do template (`validate-visual.spec.mjs`) falha, como antes | ok |
+| 2026-10-23 | `tsc -b` e `npm run build` | sem erros | sem erros | ok |
+| 2026-10-23 | `rayfin up` em `ws_blacksmith_financeiro`, item `app_blacksmith_dre` (mesmo item) | publicado e saudável | publicado; `rayfin up status` Reachable | ok |
+| pendente | No portal: tema escuro/claro em todos os visuais, contraste, cliques de filtragem cruzada (checklist da seção 8.6) | conforme CLAUDE.md | depende de publicar com `rayfin up` | pendente |

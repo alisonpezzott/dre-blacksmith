@@ -1,7 +1,7 @@
 # CLAUDE.md — Blacksmith | DRE em Sankey no Microsoft Fabric
 
 > Instruções do projeto para o Claude (Claude Code) executar a implantação de ponta a ponta:
-> ingestão → tratamento → modelo semântico → medidas DAX → Fabric App (tema dark high‑tech).
+> ingestão → tratamento → modelo semântico → medidas DAX → Fabric App (IBM Carbon, tema escuro padrão e tema claro, com filtragem cruzada).
 > Leia este arquivo inteiro antes de executar qualquer fase. Execute uma fase por vez e valide antes de avançar.
 
 ---
@@ -56,6 +56,8 @@ Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) es
 6. **Sem mock no app:** o app consome somente o modelo semântico. Se uma query falhar, mostrar estado de erro, nunca dados fictícios embutidos.
 7. **Sem credenciais no código:** usar apenas a autenticação nativa do Fabric Apps (Rayfin).
 8. **Validar antes de avançar:** cada fase tem um checklist de pronto. Não pule.
+9. **Visual IBM Carbon:** cores, tipografia e superfícies seguem o Carbon Design System (seção 9): paletas de visualização da Carbon, IBM Plex, cantos retos, sem brilho, vidro, gradiente ou neon. O tema **escuro (g100) é o padrão** e o **claro (g10)** fica disponível no cabeçalho; nenhuma cor de dado pode ser fixada para um tema só.
+10. **Filtragem cruzada:** clicar num ponto de dados filtra os demais visuais, como no Power BI (seção 8.4.1). Todo visual novo declara se é fonte, alvo ou as duas coisas, e a seleção passa pelo `construtor_filtros.ts` (whitelist), nunca por texto livre.
 
 ---
 
@@ -400,7 +402,7 @@ Antes de codar, inspecionar o projeto gerado e reaproveitar o que o template já
 
 ### 8.2 Bibliotecas extras
 - `d3-sankey` + `d3-shape` + `d3-scale` para o Sankey (o template não traz Sankey pronto).
-- Fontes: `Space Grotesk` (títulos), `Inter` (texto), `JetBrains Mono` (números). Se o ambiente bloquear Google Fonts, empacotar as fontes no projeto.
+- Fontes da Carbon, empacotadas com `@fontsource` (sem chamada a Google Fonts): `IBM Plex Sans` (títulos e texto, `@fontsource-variable/ibm-plex-sans`) e `IBM Plex Mono` (números, `@fontsource/ibm-plex-mono`, pesos 400 e 500).
 
 ### 8.3 Estrutura de pastas (snake_case)
 
@@ -412,7 +414,9 @@ src/
     consultas_dax.ts           # todas as queries da seção 8.5
     formatacao.ts              # usa as format strings do modelo
   estado/
-    estado_filtros.ts          # ano, intervalo de meses, regiões, cenário
+    estado_filtros.ts          # ano, intervalo de meses, regiões, cenário e seleção cruzada
+    estado_tema.ts             # tema escuro (padrão) / claro, guardado no navegador
+    selecao_cruzada.ts         # traduz onInteraction dos visuais em valores de seleção
   componentes/
     cabecalho_app.tsx
     barra_filtros.tsx
@@ -432,25 +436,46 @@ src/
 
 ### 8.4 Layout (desktop, grade de 12 colunas; empilha no mobile)
 
-1. **cabecalho_app**: wordmark "BLACKSMITH" com gradiente ciano→roxo, subtítulo "Do faturamento ao lucro", data da última carga.
-2. **barra_filtros** (fixa no topo): ano (2024/2025/2026/todos), intervalo de meses, regiões (multi), cenário (realizado/orçado). Padrão: último ano, todas as regiões, realizado.
-3. **Linha de KPIs** (6 cartões): receita líquida, lucro bruto, EBITDA, lucro líquido, margem líquida, variação vs orçado. Cada cartão traz valor, variação vs ano anterior (seta ▲ turquesa / ▼ laranja) e sparkline de 12 meses.
+1. **cabecalho_app**: "Blacksmith" (Plex Sans semibold) + "DRE" (light), sem gradiente; subtítulo "Do faturamento ao lucro"; data da última carga; botão de tema (☀ claro / ☾ escuro).
+2. **barra_filtros** (fixa no topo): ano (2024/2025/2026/todos), intervalo de meses, regiões (multi), cenário (realizado/orçado). Padrão: último ano, todas as regiões, realizado. Mostra a seleção cruzada ativa ("Seleção: Mar/2025, Abr/2025 ✕") e "Restaurar padrão".
+3. **Linha de KPIs** (6 cartões): receita líquida, lucro bruto, EBITDA, lucro líquido, margem líquida, variação vs orçado. Cada cartão traz valor (Plex Sans light, números tabulares), variação vs ano anterior (▲ verde / ▼ laranja) e sparkline de 12 meses. Os KPIs são alvo da filtragem cruzada.
 4. **grafico_sankey** (largura total, altura ~560 px, peça central):
-   - colunas pela `coluna_sankey`; cor do nó por `cor_hex`;
+   - colunas pela `coluna_sankey`; cor do nó pelo `tipo_no` na paleta do tema ativo (`cor_por_tipo_no`). `dim_no_sankey[cor_hex]` não é usada pelo app, porque não muda com o tema;
    - ignorar links sem valor (a medida devolve vazio), para que os nós zerados desapareçam;
-   - **prejuízo:** o nó `prejuizo_liquido` (rosa neon) entra por baixo, à esquerda da primeira camada que ele financia (posicionar em `min(coluna dos destinos) − 1`); links em rosa com textura listrada ou pulsar suave; selo "PREJUÍZO" no cartão de lucro líquido;
-   - links com gradiente da cor da origem para a do destino, opacidade 0,35, 0,85 no hover, e brilho (`drop-shadow`) suave;
+   - **prejuízo:** o nó `prejuizo_liquido` (vermelho) entra por baixo, à esquerda da primeira camada que ele financia (posicionar em `min(coluna dos destinos) − 1`); links vermelhos com textura listrada (o prejuízo não depende só da cor); selo "Prejuízo" no cartão de lucro líquido;
+   - links na cor do nó de destino, sem gradiente nem brilho, opacidade 0,4 em repouso e 0,85 em foco;
    - rótulos: nome do nó + valor abreviado (R$ 175,7 mi) + % da receita líquida;
    - tooltip com valor, % da receita e variação vs ano anterior;
-   - clique num nó abre o **painel_detalhe_no** com a evolução mensal daquele nó;
+   - hover num link ou nó destaca os fluxos ligados e esmaece os demais; clique num nó mantém esse destaque e abre o **painel_detalhe_no** com a evolução mensal daquele nó (clicar de novo fecha);
    - animação de entrada: links "fluindo" da esquerda para a direita (respeitar `prefers-reduced-motion`);
    - no mobile, rolagem horizontal dentro do próprio contêiner.
-5. **grafico_tendencia** (8 colunas): receita líquida (área com gradiente ciano) e lucro líquido (linha turquesa) por `mes_ano`; margem líquida no eixo secundário (linha roxa tracejada).
-6. **grafico_regioes** (4 colunas): barras horizontais de receita líquida por região com a margem líquida em rótulo.
-7. **tabela_dre** (8 colunas): data grid do template com linhas da DRE em `ordem_dre`, colunas realizado, orçado, variação %, com subtotais destacados (lucro bruto, EBITDA, EBIT, LAIR, lucro líquido).
-8. **painel_operacional** (4 colunas): clientes ativos, novos clientes, churn, NPS, headcount, receita por cliente e por colaborador.
+5. **grafico_tendencia** (8 colunas): receita líquida (área ciano chapada, 16% de opacidade) e lucro líquido (linha verde) por `mes_ano`; margem líquida no eixo secundário (linha roxa tracejada). Fonte da filtragem cruzada por mês.
+6. **grafico_regioes** (4 colunas): barras horizontais de receita líquida por região com a margem líquida em rótulo. Fonte da filtragem cruzada por região.
+7. **tabela_dre** (8 colunas): data grid do template com linhas da DRE em `ordem_dre`, colunas realizado, orçado, variação %, com subtotais destacados (lucro bruto, EBITDA, EBIT, LAIR, lucro líquido). Alvo da filtragem cruzada.
+8. **painel_operacional** (4 colunas): clientes ativos, novos clientes, churn, NPS, headcount, receita por cliente e por colaborador. Alvo da filtragem cruzada.
 
-Todos os componentes têm estados de carregamento (skeleton com shimmer ciano), vazio e erro.
+Todos os componentes têm estados de carregamento (skeleton da Carbon), vazio e erro.
+
+### 8.4.1 Filtragem cruzada (como no Power BI)
+
+Clicar num ponto de dados filtra os demais visuais. Implementação: `onInteraction` dos `VegaVisual` → `estado/selecao_cruzada.ts` → `selecao` em `estado_filtros.ts` → `construtor_filtros.ts` acrescenta o `TREATAS` nas consultas dos outros visuais.
+
+| visual | papel | campo | efeito |
+|---|---|---|---|
+| `grafico_tendencia` | fonte e alvo | `dim_calendario[indice_mes]` | clique num mês filtra KPIs, Sankey, regiões, DRE e operacional |
+| `painel_detalhe_no` | fonte e alvo | `dim_calendario[indice_mes]` | idem à tendência |
+| `grafico_regioes` | fonte e alvo | `dim_regiao[cod_regiao]` | clique numa região filtra KPIs, Sankey, tendência, detalhe do nó, DRE e operacional |
+| `grafico_sankey` | alvo (+ destaque) | — | clique num nó destaca os fluxos dele e abre o detalhe; não filtra os outros visuais, porque filtrar medidas em cascata por conta quebraria a DRE |
+| KPIs, `tabela_dre`, `painel_operacional` | alvo | — | só recebem filtros |
+
+Regras:
+- **Clique** seleciona; **Ctrl/Shift/⌘ + clique** soma ou retira pontos; clicar de novo no mesmo ponto, no fundo do visual, no ✕ da barra ou **Esc** limpa.
+- O visual de origem **não é filtrado** pela própria seleção: mostra todos os pontos e esmaece os não selecionados (opacidade 0,3); a tendência marca os meses selecionados com uma faixa de fundo (`layer-selected` da Carbon) e pontos nas séries. Por isso as consultas dos visuais por mês usam `sem_mes` e a de regiões usa `sem_regiao`.
+- Uma seleção por vez: selecionar em outro visual descarta a anterior. Mudar qualquer filtro da barra também limpa a seleção.
+- A seleção fica **dentro** dos filtros da barra: só filtram meses do intervalo e regiões do filtro de regiões (os demais aparecem esmaecidos e o clique neles é ignorado). Meses vêm de `q_calendario` e regiões de `dim_regiao` (whitelist); valor fora do domínio derruba a consulta com erro.
+- O esmaecimento vem do estado do painel (spec), não do destaque interno do visual (`capabilities: { disableSelfHighlight: true, disableLineChartCrosshairTooltip: true }`); quando a seleção muda por fora, o visual de origem é recriado (chave de versão) para não guardar uma seleção que o painel já descartou.
+- Linhas e áreas não identificam o mês clicado: a tendência tem uma faixa transparente por mês, por cima das séries, que recebe o clique e a dica.
+- Os subtítulos mostram o recorte efetivo ("2025 · seleção: Mar/2025 · Todas as regiões · Realizado").
 
 ### 8.5 Consultas DAX
 
@@ -461,6 +486,16 @@ O `construtor_filtros.ts` gera os filtros abaixo **apenas com valores vindos das
 TREATAS ( { "realizado" }, dim_cenario[cod_cenario] ),
 TREATAS ( { 2026 }, dim_calendario[ano] ),
 TREATAS ( { "sudeste", "sul" }, dim_regiao[cod_regiao] )
+-- com seleção cruzada (seção 8.4.1), fora dos visuais de origem
+TREATAS ( { 15, 16 }, dim_calendario[indice_mes] )   -- meses clicados
+TREATAS ( { "sul" }, dim_regiao[cod_regiao] )        -- regiões clicadas (substitui o filtro de regiões)
+```
+
+**q_calendario** (domínio da seleção por mês e rótulos `mes_ano`)
+```dax
+EVALUATE
+SUMMARIZECOLUMNS ( dim_calendario[indice_mes], dim_calendario[ano], dim_calendario[mes], dim_calendario[mes_ano] )
+ORDER BY dim_calendario[indice_mes]
 ```
 
 **q_kpis**
@@ -557,7 +592,7 @@ SUMMARIZECOLUMNS (
 )
 ORDER BY dim_calendario[indice_mes]
 ```
-No grafico_tendencia, marcar os meses com `lucro_liquido < 0` com um ponto rosa neon e um rótulo "prejuízo".
+No grafico_tendencia, marcar os meses com `lucro_liquido < 0` com um ponto vermelho (Red 50 / Red 60) e um rótulo "prejuízo".
 
 Regras: verificar o `status` de cada resposta antes de passar colunas e linhas aos visuais; disparar as queries em paralelo; não duplicar queries.
 
@@ -576,97 +611,85 @@ Regras: verificar o `status` de cada resposta antes de passar colunas e linhas a
 - [ ] Trocar o cenário para orçado atualiza todos os visuais.
 - [ ] Estados de loading, vazio e erro testados (ex.: remover permissão temporariamente).
 - [ ] Layout ok em 1440 px, 1024 px e 390 px.
+- [ ] Abre no tema escuro; o botão do cabeçalho troca para o claro (e volta) em todos os visuais, inclusive Sankey, Vega e data grid, e a escolha persiste ao recarregar.
+- [ ] Contraste AA nos dois temas (texto ≥ 4,5:1; marcas de gráfico ≥ 3:1).
+- [ ] Filtragem cruzada: em 2025, clicar em mar/2025 na tendência mostra o prejuízo de R$ 2,59 mi nos KPIs e o nó de prejuízo no Sankey; Ctrl+clique em abr/2025 soma os dois meses; clicar no Sudeste com abr/2025 selecionado na barra mostra prejuízo; Esc limpa.
+- [ ] O visual de origem não se filtra (só esmaece) e a seleção some ao mudar um filtro da barra ou ao selecionar em outro visual.
+- [ ] `npm run validar:consultas` sem falhas (inclui os recortes de filtragem cruzada).
 
 ---
 
-## 9. Tema visual — dark high‑tech
+## 9. Tema visual — IBM Carbon (escuro padrão + claro)
+
+Base: [Carbon Design System](https://carbondesignsystem.com) — temas de UI g100 (escuro) e g10 (claro) e as [paletas de visualização de dados](https://www.carbondesignsystem.com/data-visualization/color-palettes). O app abre no **escuro**; o botão do cabeçalho alterna para o **claro** e a escolha fica no navegador (`localStorage`, chave `blacksmith_tema`, com `try/catch`). A troca é a classe `.dark` no `<html>`: os tokens CSS mudam e o `useCssTheme()` do template repassa as cores aos visuais Vega e ao data grid.
 
 ### 9.1 Tokens (`tema/tokens_tema.css`)
 
-```css
-:root {
-  /* superfícies */
-  --cor_fundo: #05070F;
-  --cor_fundo_gradiente: radial-gradient(1200px 600px at 15% -10%, #0B2A3A 0%, transparent 60%),
-                         radial-gradient(900px 500px at 110% 10%, #2A0F45 0%, transparent 55%),
-                         #05070F;
-  --cor_superficie: #0B1020;
-  --cor_superficie_2: #111833;
-  --cor_borda: rgba(0, 229, 255, 0.14);
-  --cor_borda_forte: rgba(0, 229, 255, 0.35);
+| token | claro (g10) | escuro (g100) | uso |
+|---|---|---|---|
+| `--cor_fundo` | `#f4f4f4` | `#161616` | background |
+| `--cor_superficie` | `#ffffff` | `#262626` | layer-01: cartões |
+| `--cor_superficie_2` | `#f4f4f4` | `#393939` | layer-02: blocos dentro de cartões, campos |
+| `--cor_superficie_hover` | `#e8e8e8` | `#333333` | hover |
+| `--cor_selecionado` | `#e0e0e0` | `#393939` | layer-selected: faixa da seleção cruzada, selo da seleção |
+| `--cor_borda` / `--cor_borda_forte` | `#e0e0e0` / `#8d8d8d` | `#393939` / `#6f6f6f` | border-subtle / border-strong |
+| `--cor_texto` / `_suave` / `_fraco` | `#161616` / `#525252` / `#6f6f6f` | `#f4f4f4` / `#c6c6c6` / `#a8a8a8` | text-primary / secondary / helper |
+| `--cor_interativo` / `--cor_foco` | `#0f62fe` / `#0f62fe` | `#4589ff` / `#ffffff` | links, botões, anel de foco |
+| `--cor_receita` | `#1192e8` Cyan 50 | `#33b1ff` Cyan 40 | receitas |
+| `--cor_total` | `#6929c4` Purple 70 | `#8a3ffc` Purple 60 | totais intermediários, orçado, margem |
+| `--cor_custo` | `#ba4e00` Orange 60 | `#ff832b` Orange 40 | custos, despesas, variação negativa |
+| `--cor_lucro` | `#198038` Green 60 | `#6fdc8c` Green 30 | lucros, variação positiva |
+| `--cor_prejuizo` | `#da1e28` Red 60 | `#fa4d56` Red 50 | **exclusivo de prejuízo** (preenchimentos) |
+| `--cor_prejuizo_texto` | `#da1e28` | `#ff8389` | texto de prejuízo e erro (text-error) |
 
-  /* texto */
-  --cor_texto: #E6F1FF;
-  --cor_texto_suave: #8A9BB8;
-  --cor_texto_fraco: #55627D;
+Tipografia: `--fonte_titulo` e `--fonte_texto` = IBM Plex Sans; `--fonte_numero` = IBM Plex Mono. Forma: `--raio: 0px` (tiles, botões e campos retos; selos em pílula). Movimento: `--duracao_curta: 110ms`, `--duracao_media: 240ms`, curva `cubic-bezier(0, 0, 0.38, 0.9)` (Carbon productive).
 
-  /* acentos */
-  --cor_ciano: #00E5FF;       /* receitas, foco, links ativos */
-  --cor_turquesa: #14F1C6;    /* lucros, variação positiva */
-  --cor_laranja: #FF7A1A;     /* custos/despesas, variação negativa */
-  --cor_roxo: #A855F7;        /* totais intermediários, orçado */
-  --cor_rosa_neon: #FF3DCB;   /* exclusivo de prejuízo */
-
-  /* efeitos */
-  --brilho_ciano: 0 0 24px rgba(0, 229, 255, 0.35);
-  --brilho_turquesa: 0 0 24px rgba(20, 241, 198, 0.30);
-  --brilho_laranja: 0 0 24px rgba(255, 122, 26, 0.30);
-  --gradiente_marca: linear-gradient(90deg, #00E5FF 0%, #14F1C6 35%, #A855F7 75%, #FF7A1A 100%);
-
-  /* tipografia */
-  --fonte_titulo: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
-  --fonte_texto: "Inter", "Segoe UI", system-ui, sans-serif;
-  --fonte_numero: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-
-  /* forma */
-  --raio: 14px;
-  --espaco: 16px;
-}
-```
+O `global.css` aponta os tokens do template (`--color-background`, `--color-card`, `--color-border`, `--color-ring`…) para estes e expõe utilitários Tailwind por papel: `text-receita`, `text-lucro`, `text-custo`, `bg-prejuizo`, `text-prejuizo-texto`, `bg-selecionado`, `text-interativo`, `text-texto-fraco`. Nunca usar hex fixo em componente: usar o utilitário (CSS) ou a paleta do tema (TS). A paleta categórica do template (`--color-data-1..10`) é a categórica da Carbon na ordem da documentação, com valores próprios em cada tema.
 
 ### 9.2 Diretrizes
-- Cartões em vidro escuro: fundo `--cor_superficie` com 85% de opacidade, `backdrop-filter: blur(12px)`, borda `--cor_borda` e, no hover, borda `--cor_borda_forte` + `--brilho_ciano`.
-- Linha de 2 px com `--gradiente_marca` no topo do cabeçalho e no cartão em foco.
-- Números grandes em `--fonte_numero`, com `font-variant-numeric: tabular-nums`.
-- Grade sutil de fundo (linhas a cada 32 px, 3% de opacidade) para o ar "painel de controle".
-- Semântica de cor fixa: ciano = receita; roxo = totais e orçado; laranja = custo e queda; turquesa = lucro e alta; rosa neon = prejuízo (uso exclusivo).
-- Contraste mínimo AA para texto; nada de texto laranja ou roxo sobre fundo escuro abaixo de 14 px.
-- Animações curtas (200–400 ms, `ease-out`), desligadas com `prefers-reduced-motion`.
+- Superfícies chapadas: cartão = `--cor_superficie` com borda `--cor_borda` de 1 px; sem sombra, desfoque (`backdrop-filter`), brilho (`drop-shadow`, `box-shadow` colorido), gradiente, grade de fundo ou neon.
+- Tipografia leve: títulos de cartão Plex Sans 16 px semibold; rótulos e textos 12–14 px regular, sem caixa alta nem espaçamento de letras; números grandes (KPIs, operacional) em Plex Sans **light** com `tabular-nums`; números de tabela, eixo e tooltip em Plex Mono 400.
+- Semântica de cor fixa: ciano = receita; roxo = totais e orçado; laranja = custo e queda; verde = lucro e alta; vermelho = prejuízo (uso exclusivo). Botão ativo da barra de filtros = superfície invertida (`bg-foreground text-background`).
+- Gráficos sem gradiente (regra da Carbon: nunca usar gradiente no lugar de paleta). Áreas com preenchimento chapado de baixa opacidade; links do Sankey na cor do destino.
+- O prejuízo não depende só da cor: links listrados, rótulo "prejuízo" na tendência, contorno nas barras do detalhe e selo no KPI.
+- Contraste mínimo AA nos dois temas: texto ≥ 4,5:1, marcas de gráfico ≥ 3:1. Texto vermelho usa `--cor_prejuizo_texto`.
+- Animações curtas (110–240 ms), desligadas com `prefers-reduced-motion`.
+- Pontos fora da seleção cruzada ou do filtro: opacidade 0,3 (`opacidade_esmaecida`).
 
 ### 9.3 Paleta dos gráficos (`tema/tema_graficos.ts`)
 
+O Vega e o SVG do Sankey precisam de cores literais, então a paleta TS repete os valores de 9.1 por tema (`paletas.escuro`, `paletas.claro`). Componentes leem a paleta ativa com `usePaletaGraficos()`; os specs recebem a paleta por parâmetro (`montar_spec_tendencia(paleta, …)`) e a configuração comum vem de `config_vega(paleta)` (grade, eixos e rótulos em Plex).
+
 ```ts
-export const paleta_graficos = {
-  receita: "#00E5FF",
-  total: "#A855F7",
-  custo: "#FF7A1A",
-  lucro: "#14F1C6",
-  prejuizo: "#FF3DCB",
-  serie_extra: ["#00E5FF", "#14F1C6", "#A855F7", "#FF7A1A", "#FF3DCB"],
-  grade: "rgba(138, 155, 184, 0.12)",
-  eixo: "#55627D",
-  tooltip_fundo: "rgba(11, 16, 32, 0.95)",
+export const paletas: Record<Tema, PaletaGraficos> = {
+  escuro: { receita: "#33b1ff", total: "#8a3ffc", custo: "#ff832b", lucro: "#6fdc8c", prejuizo: "#fa4d56",
+            prejuizo_texto: "#ff8389", selecionado: "#393939", grade: "#393939", eixo: "#6f6f6f",
+            texto: "#f4f4f4", texto_suave: "#c6c6c6", superficie: "#262626" },
+  claro:  { receita: "#1192e8", total: "#6929c4", custo: "#ba4e00", lucro: "#198038", prejuizo: "#da1e28",
+            prejuizo_texto: "#da1e28", selecionado: "#e0e0e0", grade: "#e0e0e0", eixo: "#8d8d8d",
+            texto: "#161616", texto_suave: "#525252", superficie: "#ffffff" },
 };
 ```
 
-A coluna `dim_no_sankey[cor_hex]` já usa essa paleta: receita `#00E5FF`, total `#A855F7`, custo `#FF7A1A`, lucro `#14F1C6`, prejuízo `#FF3DCB`.
+A coluna `dim_no_sankey[cor_hex]` ainda guarda a paleta antiga (neon) e só serve ao Plano B; o app colore os nós pelo `tipo_no` (`cor_por_tipo_no(paleta, tipo_no)`). Se a base for regenerada, gravar em `cor_hex` os valores do tema escuro.
 
 ---
 
 ## 10. Plano B — relatório Power BI (low‑code)
 
-Se o Fabric App não estiver liberado no tenant, publicar um relatório `rpt_blacksmith_dre` sobre o mesmo `sm_blacksmith_dre` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4 e um tema JSON com as cores da seção 9. Distribuir via org app.
+Se o Fabric App não estiver liberado no tenant, publicar um relatório `rpt_blacksmith_dre` sobre o mesmo `sm_blacksmith_dre` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4, a filtragem cruzada nativa do Power BI (mesmos papéis da seção 8.4.1: Sankey só destaca) e dois temas JSON (escuro g100 e claro g10) com as cores e a fonte IBM Plex da seção 9. Distribuir via org app.
 
 ---
 
 ## 11. Roteiro do "momento prejuízo" na demo
 
-1. Abrir com 2026 (ano forte): fluxo limpo até o lucro líquido em turquesa.
+1. Abrir com 2026 (ano forte), no tema escuro: fluxo limpo até o lucro líquido em verde.
 2. Trocar para 2025: lucro menor, sem prejuízo no ano. Perguntar à equipe "onde foi parar a margem?".
-3. Mostrar a tendência: dois pontos rosa em mar e abr/2025.
-4. Filtrar mar/2025: o EBITDA some e o nó rosa "Prejuízo Líquido" aparece financiando despesas, D&A e financeiro. Clicar em Despesas Não Recorrentes.
-5. Filtrar abr/2025 e alternar regiões: só o Sudeste fica no vermelho.
+3. Mostrar a tendência: dois pontos vermelhos em mar e abr/2025.
+4. Clicar em mar/2025 na tendência (filtragem cruzada): os KPIs mostram o prejuízo, o EBITDA some e o nó vermelho "Prejuízo Líquido" aparece financiando despesas, D&A e financeiro. Clicar em Despesas Não Recorrentes no Sankey para ver a evolução mensal.
+5. Ctrl+clique em abr/2025 para somar os dois meses. Depois, na barra, filtrar abr/2025 e clicar no Sudeste no gráfico de regiões: só o Sudeste fica no vermelho (clicar no Sul mostra lucro). Esc limpa a seleção.
 6. Trocar para orçado: o orçamento não previa o evento, e a variação aparece no cartão.
+7. (Opcional) Alternar para o tema claro para mostrar o painel em projetor ou impressão.
 
 ---
 
@@ -675,6 +698,6 @@ Se o Fabric App não estiver liberado no tenant, publicar um relatório `rpt_bla
 1. Confirmar com o usuário os pré‑requisitos da Fase 0 (não é possível checar o tenant sozinho).
 2. Gerar os notebooks `nb_01_ingestao`, `nb_02_qualidade` e `nb_03_atualizar_modelo` em `fabric/` (formato Git do Fabric) e implantar com o fab CLI (`fab import … --format .py`, `fab job run`).
 3. Gerar as medidas da seção 7.3 em TMDL (`fabric/sm_blacksmith_dre.SemanticModel/`) e implantar com `fab import -f`, seguido de refresh.
-4. Fazer o scaffold do app (seção 8.1), inspecionar o template e só então implementar os componentes.
+4. Fazer o scaffold do app (seção 8.1), inspecionar o template e só então implementar os componentes. Todo componente novo ou alterado segue o tema Carbon nos dois temas (seção 9) e o papel de filtragem cruzada da seção 8.4.1.
 5. Validar contra os números da seção 1 a cada fase e registrar o resultado em `docs/log_validacao.md`.
 6. Nunca usar dados reais de clientes; parar e perguntar se aparecer qualquer arquivo que não seja a base fictícia.
