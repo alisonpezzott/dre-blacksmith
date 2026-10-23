@@ -15,7 +15,7 @@
   - mar/2025: R$ 4,8 mi → a Blacksmith fecha o mês com **prejuízo de R$ 2,59 mi** (o EBITDA zera);
   - abr/2025: R$ 2,6 mi → **prejuízo de R$ 0,61 mi** (só o Sudeste fica negativo; as outras regiões lucram);
   - 70% do evento no Sudeste; o ano de 2025 continua lucrativo (R$ 13,09 mi).
-- **Arquivos de origem:** `base_sankey_dre_blacksmith_csv.zip` (7 CSVs) e `base_sankey_dre_blacksmith.xlsx` (mesmas tabelas + aba `dre_anual` de conferência).
+- **Arquivos de origem:** os 7 CSVs em `dataset/`. O gabarito de conferência é `validacao/referencias.json`.
 
 ### Números de referência (realizado, consolidado) — usar para validar cada fase
 
@@ -28,7 +28,7 @@
 | lucro_liquido | 15.882.255,48 | 13.088.163,15 | 24.560.318,22 |
 | margem_liquida | 11,7% | 8,5% | 14,0% |
 
-Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) estão em `validacao/referencias.json`, gerado a partir de `dataset/` por `uv run validacao/gerar_referencias.py` (substitui as abas `dre_anual` e `resultado_mensal` do Excel). Diferença tolerada: R$ 1,00.
+Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) estão em `validacao/referencias.json`, gerado a partir de `dataset/` por `uv run validacao/gerar_referencias.py`. Diferença tolerada: R$ 1,00.
 
 ### Cenários de teste do Sankey (realizado, todas as regiões)
 
@@ -64,16 +64,19 @@ Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) es
 ## 3. Arquitetura
 
 ```
-CSVs (zip) ──► lh_blacksmith/Files/raw/blacksmith/
-                 │  nb_01_ingestao
+CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
+                 │  nb_01_ingestao                     ┐
+                 ▼                                     │
+            tabelas delta (lh_blacksmith/Tables)       │
+            dim_calendario, dim_conta, dim_regiao,     │ pl_blacksmith_carga
+            dim_cenario, dim_no_sankey,                │
+            dim_link_sankey, fato_lancamentos,         │
+            fato_operacional                           │
+                 │  nb_02_qualidade (testes)           │
+                 │  nb_03_atualizar_modelo (refresh)   ┘
                  ▼
-            tabelas delta (lh_blacksmith/Tables)
-            dim_calendario, dim_conta, dim_regiao, dim_cenario,
-            dim_no_sankey, dim_link_sankey, fato_lancamentos, fato_operacional
-                 │  nb_02_qualidade (testes)
-                 ▼
-            sm_blacksmith_dre  (Direct Lake, medidas DAX)
-                 │  Execute DAX Queries API
+            sm_blacksmith_dre  (Direct Lake on OneLake, medidas DAX)
+                 │  Execute DAX Queries API (fabric-app-data)
                  ▼
             app_blacksmith_dre (Fabric App, template dataapp, TypeScript)
 ```
@@ -82,25 +85,30 @@ CSVs (zip) ──► lh_blacksmith/Files/raw/blacksmith/
 |---|---|
 | workspace | `ws_blacksmith_financeiro` (capacidade Fabric) |
 | lakehouse | `lh_blacksmith` |
-| notebooks | `nb_01_ingestao`, `nb_02_qualidade` |
+| notebooks | `nb_01_ingestao`, `nb_02_qualidade`, `nb_03_atualizar_modelo` |
+| pipeline | `pl_blacksmith_carga` (nb_01 → nb_02 → nb_03) |
 | modelo semântico | `sm_blacksmith_dre` |
 | fabric app | `app_blacksmith_dre` |
+
+**IDs do ambiente fora do git.** Os itens em `fabric/` são versionados com marcadores (`{{ID_WORKSPACE}}`, `{{ID_LAKEHOUSE}}`, `{{ID_NB_01_INGESTAO}}`, `{{ID_NB_02_QUALIDADE}}`, `{{ID_NB_03_ATUALIZAR_MODELO}}`); os valores ficam no `.env` da raiz (modelo em `.env.example`). Antes do `fab import`, `uv run fabric/ids_ambiente.py implantar` gera em `.implantacao/fabric/` (fora do git) uma cópia com os IDs; depois de um `fab export` para `fabric/`, `uv run fabric/ids_ambiente.py anonimizar` devolve os marcadores. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
 
 ---
 
 ## 4. Fase 0 — Pré‑requisitos
 
-- [ ] Workspace em **capacidade Fabric** (Fabric Apps não funcionam em capacidade compartilhada/Pro).
-- [ ] Permissão Contributor, Member ou Admin no workspace.
-- [ ] Portal de administração do Fabric (tenant):
-  - [ ] Workload **Fabric Apps** habilitado.
-  - [ ] Configuração de integração **Semantic Model Execute Queries REST API** (pode aparecer como *Dataset Execute Queries REST API*) habilitada.
-- [ ] Node.js 20 ou superior e npm na máquina de desenvolvimento.
-- [ ] VS Code com o Claude Code.
-- [ ] Usuários finais com permissões **Build** e **Read** no `sm_blacksmith_dre`.
+- [x] Workspace em **capacidade Fabric** (Fabric Apps não funcionam em capacidade compartilhada/Pro).
+- [x] Permissão Contributor, Member ou Admin no workspace.
+- [x] Portal de administração do Fabric (tenant):
+  - [x] Workload **Fabric Apps** habilitado.
+  - [x] Configuração de integração **Semantic Model Execute Queries REST API** (pode aparecer como *Dataset Execute Queries REST API*) habilitada.
+- [x] Node.js 20 ou superior e npm na máquina de desenvolvimento (usado: v24).
+- [x] Python 3.13 + `uv`; fab CLI ≥ 1.8 (`uv tool install --python 3.13 ms-fabric-cli`).
+- [ ] Azure CLI logado (`az login`): exigido por `npm run validar:consultas` e `npm run validate:visual`.
+- [x] VS Code com o Claude Code.
+- [ ] Usuários finais com permissões **Build** e **Read** no `sm_blacksmith_dre` (adiado: por enquanto só o dono usa o app).
 
-> Fabric Apps está em preview. Antes de executar a Fase 4, confira a documentação atual em
-> https://learn.microsoft.com/fabric/apps/ e rode `npx rayfin --help` para confirmar comandos e flags.
+> Fabric Apps está em preview. Versões usadas: Rayfin CLI 1.36.2, `@microsoft/fabric-app-data` 1.1.0,
+> `@microsoft/fabric-visuals` 4.2.0. Em versões novas, confira https://learn.microsoft.com/fabric/apps/ e `npx rayfin --help`.
 
 ---
 
@@ -114,11 +122,12 @@ CSVs (zip) ──► lh_blacksmith/Files/raw/blacksmith/
 
 | tabela | colunas (tipo) | grão |
 |---|---|---|
-| `dim_calendario` | data (date), ano (int), mes (int), nome_mes (string), ano_mes (string), mes_ano (string), trimestre (string), ano_trimestre (string), semestre (string) | 1 linha por mês |
+| `dim_calendario` | data (date), ano (int), mes (int), indice_mes (int, gerado no `nb_01`), nome_mes (string), ano_mes (string), mes_ano (string), trimestre (string), ano_trimestre (string), semestre (string) | 1 linha por mês |
 | `dim_conta` | cod_conta, nome_conta, cod_grupo, nome_grupo, natureza (receita/despesa) (string), ordem_dre (int) | 19 contas |
 | `dim_regiao` | cod_regiao, nome_regiao, ufs, escritorio (string) | 5 regiões |
 | `dim_no_sankey` | cod_no, nome_no, tipo_no (receita/total/custo/lucro/prejuizo), cor_hex (string), coluna_sankey (int) | 30 nós |
 | `dim_link_sankey` | cod_link, cod_no_origem, cod_no_destino, cod_conta, tipo_link (conta/subtotal/prejuizo) (string), etapa, ordem_link (int) | 33 links possíveis |
+| `dim_cenario` | cod_cenario, nome_cenario (string), ordem_cenario (int) — criada no `nb_01` | 2 cenários |
 | `fato_lancamentos` | data (date), cod_regiao, cod_conta, cenario (string), valor, valor_dre (decimal(18,2)), data_hora_carga (timestamp, horário de Brasília, gerado no `nb_01`) | mês × região × conta × cenário (6.484 linhas; contas zeradas não têm linha) |
 | `fato_operacional` | data (date), cod_regiao (string), clientes_ativos, novos_clientes, headcount, nps, contratos_fechados (int), churn_pct (double) | mês × região, só realizado (180 linhas) |
 
@@ -128,9 +137,9 @@ Regras de sinal: `valor` sempre positivo; `valor_dre` positivo para receita e ne
 
 ### 5.3 Código do notebook
 
-Implementado em `fabric/nb_01_ingestao.Notebook/notebook-content.py` (formato Git do Fabric; importar com `fab import … --format .py`). Regras:
+Implementado em `fabric/nb_01_ingestao.Notebook/notebook-content.py` (formato Git do Fabric; importar a cópia de `.implantacao/fabric/` com `fab import … --format .py`, seção 3). Regras:
 
-- Schema DDL explícito por tabela, **na ordem do cabeçalho do CSV** (a ordem de `dim_link_sankey` no arquivo difere da ordem do dicionário), com `mode=FAILFAST` (valor que não converte derruba a leitura em vez de virar nulo) e `enforceSchema=false` (confere os nomes do cabeçalho).
+- Schema DDL explícito por tabela, **na ordem do cabeçalho do CSV** (a ordem dos CSVs de `dim_link_sankey`, `dim_no_sankey` e `fato_operacional` difere da ordem do dicionário), com `mode=FAILFAST` (valor que não converte derruba a leitura em vez de virar nulo) e `enforceSchema=false` (confere os nomes do cabeçalho).
 - `trim` das colunas de texto num único `select`; `dim_link_sankey.cod_conta` nulo vira `""`.
 - V-Order ligado (`spark.sql.parquet.vorder.default`), porque as tabelas são lidas em Direct Lake.
 - `dim_calendario.indice_mes = (ano − 2024) × 12 + mes`; `fato_lancamentos.data_hora_carga` = um único timestamp da carga (Brasília).
@@ -140,8 +149,8 @@ Implementado em `fabric/nb_01_ingestao.Notebook/notebook-content.py` (formato Gi
 `indice_mes` (1 a 36) é a chave das comparações com o ano anterior e dos acumulados, porque o calendário é mensal e não diário.
 
 ### Pronto quando
-- [ ] 8 tabelas delta criadas (7 CSVs + `dim_cenario`), com as contagens da seção 5.2.
-- [ ] Tipos corretos (sem `string` em colunas numéricas/data).
+- [x] 8 tabelas delta criadas (7 CSVs + `dim_cenario`), com as contagens da seção 5.2.
+- [x] Tipos corretos (sem `string` em colunas numéricas/data).
 
 ---
 
@@ -158,10 +167,10 @@ Testes obrigatórios. O notebook deve **falhar** (`assert`) se algum não passar
 Também verifica: ordenação (cada rótulo com um único valor de `sortByColumn`), regras de sinal (`valor ≥ 0`; `valor_dre` coerente com `dim_conta.natureza`), estrutura do Sankey (`cod_link = origem__destino`, `tipo_link`, nós sem link, links que não avançam de coluna) e faixas do operacional.
 
 ### Pronto quando
-- [ ] `nb_02_qualidade` imprime `qualidade ok`.
-- [ ] Lucro líquido realizado 2024 = 15.882.255,48 e 2025 = 13.088.163,15.
-- [ ] Apenas mar/2025 e abr/2025 aparecem com prejuízo consolidado.
-- [ ] Pipeline `pl_blacksmith_carga`: `nb_01_ingestao` → `nb_02_qualidade` → `nb_03_atualizar_modelo` (refresh do modelo com semantic link, só se a qualidade passar). Com "Keep your Direct Lake data up to date" desligado no modelo, o reenquadramento só acontece depois dos testes.
+- [x] `nb_02_qualidade` imprime `qualidade ok`.
+- [x] Lucro líquido realizado 2024 = 15.882.255,48 e 2025 = 13.088.163,15.
+- [x] Apenas mar/2025 e abr/2025 aparecem com prejuízo consolidado.
+- [x] Pipeline `pl_blacksmith_carga`: `nb_01_ingestao` → `nb_02_qualidade` → `nb_03_atualizar_modelo` (refresh do modelo com semantic link, só se a qualidade passar). Com "Keep your Direct Lake data up to date" desligado no modelo, o reenquadramento só acontece depois dos testes.
 
 ---
 
@@ -169,9 +178,10 @@ Também verifica: ordenação (cada rótulo com um único valor de `sortByColumn
 
 ### 7.1 Criação
 - Criar a partir do `lh_blacksmith` em modo **Direct Lake on OneLake** (expressão `AzureStorage.DataLake`), incluindo as 8 tabelas. É o tipo recomendado pela Microsoft para modelos novos e o que aceita a tabela calculada `_medidas`.
-- Definição versionada em `fabric/sm_blacksmith_dre.SemanticModel/` (TMDL). Fluxo: `fab export` → editar o TMDL → `fab import -f` → refresh. A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
+- Definição versionada em `fabric/sm_blacksmith_dre.SemanticModel/` (TMDL). Fluxo: `fab export` → `ids_ambiente.py anonimizar` → editar o TMDL → `ids_ambiente.py implantar` → `fab import -f` (a partir de `.implantacao/fabric/`) → refresh. A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
 - Fatos com todas as colunas ocultas (expor somente medidas); nas dimensões, ocultar as chaves `cod_*` usadas em relacionamento, `cod_grupo` e `indice_mes`. `dim_no_sankey` e `dim_link_sankey` ficam visíveis (Plano B). `discourageImplicitMeasures` ligado.
 - Ordenar colunas: `dim_calendario[mes_ano]` por `indice_mes`; `dim_calendario[nome_mes]` por `mes`; `dim_conta[nome_conta]` por `ordem_dre`; `dim_cenario[nome_cenario]` por `ordem_cenario`.
+- No modelo, `fato_lancamentos[valor]` e `[valor_dre]` são `double` (no lakehouse, `decimal(18,2)`); os relacionamentos por `data` usam `joinOnDateBehavior: datePartOnly`.
 
 ### 7.2 Relacionamentos (todos 1:N, filtro em direção única)
 
@@ -186,9 +196,9 @@ Também verifica: ordenação (cada rótulo com um único valor de `sortByColumn
 
 ### 7.3 Medidas DAX
 
-Criar numa tabela de medidas `_medidas` (ou na `fato_lancamentos`), com as pastas de exibição indicadas. Todas as medidas da DRE respeitam o filtro de `dim_cenario`; as medidas `_realizado`/`_orcado` forçam o cenário.
+As 53 medidas ficam na tabela calculada `_medidas` (`source = { 0 }`, coluna `Value` oculta), com as pastas de exibição indicadas. Todas as medidas da DRE respeitam o filtro de `dim_cenario`; as medidas `_realizado`/`_orcado` forçam o cenário.
 
-**Pasta `01_dre`** — formato `"R$" #,##0;("R$" #,##0);-`
+**Pasta `01_dre`** — formato `\R\$ #,##0;(\R\$ #,##0);-`
 
 ```dax
 valor_dre = SUM ( fato_lancamentos[valor_dre] )
@@ -231,15 +241,24 @@ lucro_liquido_realizado = CALCULATE ( [lucro_liquido], dim_cenario[cod_cenario] 
 lucro_liquido_orcado = CALCULATE ( [lucro_liquido], dim_cenario[cod_cenario] = "orcado" )
 var_lucro_liquido_orcado_pct = DIVIDE ( [lucro_liquido_realizado] - [lucro_liquido_orcado], ABS ( [lucro_liquido_orcado] ) )
 
--- ano anterior (calendário mensal: desloca 12 posições em indice_mes)
+-- ano anterior (calendário mensal: desloca 12 posições em indice_mes);
+-- vazia se algum mês do contexto não tem o mesmo mês do ano anterior no calendário
 receita_liquida_aa =
-VAR meses_aa = SELECTCOLUMNS ( VALUES ( dim_calendario[indice_mes] ), "indice_mes", dim_calendario[indice_mes] - 12 )
-RETURN CALCULATE ( [receita_liquida], REMOVEFILTERS ( dim_calendario ), TREATAS ( meses_aa, dim_calendario[indice_mes] ) )
+VAR meses = VALUES ( dim_calendario[indice_mes] )
+VAR meses_aa = SELECTCOLUMNS ( meses, "indice_mes", dim_calendario[indice_mes] - 12 )
+VAR meses_cobertos = COUNTROWS ( INTERSECT ( meses_aa, ALL ( dim_calendario[indice_mes] ) ) )
+RETURN
+    IF ( meses_cobertos = COUNTROWS ( meses ),
+         CALCULATE ( [receita_liquida], REMOVEFILTERS ( dim_calendario ), TREATAS ( meses_aa, dim_calendario[indice_mes] ) ) )
 var_receita_liquida_aa_pct = DIVIDE ( [receita_liquida] - [receita_liquida_aa], ABS ( [receita_liquida_aa] ) )
 
-lucro_liquido_aa =
-VAR meses_aa = SELECTCOLUMNS ( VALUES ( dim_calendario[indice_mes] ), "indice_mes", dim_calendario[indice_mes] - 12 )
-RETURN CALCULATE ( [lucro_liquido], REMOVEFILTERS ( dim_calendario ), TREATAS ( meses_aa, dim_calendario[indice_mes] ) )
+lucro_liquido_aa =   -- mesma guarda de receita_liquida_aa
+VAR meses = VALUES ( dim_calendario[indice_mes] )
+VAR meses_aa = SELECTCOLUMNS ( meses, "indice_mes", dim_calendario[indice_mes] - 12 )
+VAR meses_cobertos = COUNTROWS ( INTERSECT ( meses_aa, ALL ( dim_calendario[indice_mes] ) ) )
+RETURN
+    IF ( meses_cobertos = COUNTROWS ( meses ),
+         CALCULATE ( [lucro_liquido], REMOVEFILTERS ( dim_calendario ), TREATAS ( meses_aa, dim_calendario[indice_mes] ) ) )
 var_lucro_liquido_aa_pct = DIVIDE ( [lucro_liquido] - [lucro_liquido_aa], ABS ( [lucro_liquido_aa] ) )
 
 -- acumulado no ano até o último mês do contexto
@@ -363,8 +382,8 @@ RETURN
 |---|---|---|
 | `03_comparativos` | `lucro_bruto_aa`, `ebitda_aa`, `margem_liquida_aa` | R$ / `0.0%` |
 | `03_comparativos` | `var_lucro_bruto_aa_pct`, `var_ebitda_aa_pct` | `+0.0%;-0.0%;0.0%` |
-| `03_comparativos` | `var_margem_liquida_aa_pp` (diferença em pontos percentuais) | `+0.0 p.p.` |
-| `05_sankey` | `sankey_valor_aa`, `var_sankey_valor_aa_pct` (tooltip do Sankey) | R$ / `+0.0%` |
+| `03_comparativos` | `var_margem_liquida_aa_pp` (diferença em pontos percentuais) | `+0.0 \p\.\p\.;-0.0 \p\.\p\.;0.0 \p\.\p\.` |
+| `05_sankey` | `sankey_valor_aa`, `var_sankey_valor_aa_pct` (tooltip do Sankey) | R$ / `+0.0%;-0.0%;0.0%` |
 | `06_carga` | `data_ultima_carga` (máximo de `data_hora_carga`, sem filtros) | `dd/MM/yyyy HH:mm` |
 
 **Guarda das medidas `_aa`:** todas (inclusive `receita_liquida_aa` e `lucro_liquido_aa`) ficam vazias quando algum mês do contexto não tem o mesmo mês do ano anterior no calendário. Sem isso, o filtro "todos os anos" compararia 36 meses com 24.
@@ -374,12 +393,12 @@ RETURN
 **Validação automatizada:** `uv run validacao/validar_modelo.py` roda as consultas de `validacao/dax/` (v01 a v06) pela API `executeQueries` e compara com `validacao/referencias.json`; a v04 generaliza a query acima para todos os recortes (mês e ano × cenário, consolidado e por região).
 
 ### Pronto quando
-- [ ] Com `dim_cenario = realizado` e `ano = 2024`: `lucro_liquido` = 15.882.255,48 e `margem_liquida` = 11,7%.
-- [ ] `sankey_valor` bate com a tabela "Cenários de teste do Sankey" (seção 1) e a query de validação não retorna linhas.
-- [ ] `receita_liquida_aa` em 2025 = `receita_liquida` em 2024.
-- [ ] Nenhuma medida retorna erro em um visual de tabela por `mes_ano`.
-- [ ] Modelo compartilhado com Build + Read para os usuários do app.
-- [ ] Anotar `workspace_id` e `item_id` do modelo (registrados em `.env`, fora do git: `ID_WORKSPACE`, `ID_MODELO_SEMANTICO`).
+- [x] Com `dim_cenario = realizado` e `ano = 2024`: `lucro_liquido` = 15.882.255,48 e `margem_liquida` = 11,7%.
+- [x] `sankey_valor` bate com a tabela "Cenários de teste do Sankey" (seção 1) e a query de validação não retorna linhas.
+- [x] `receita_liquida_aa` em 2025 = `receita_liquida` em 2024.
+- [x] Nenhuma medida retorna erro em um visual de tabela por `mes_ano`.
+- [ ] Modelo compartilhado com Build + Read para os usuários do app (adiado).
+- [x] Anotar `workspace_id` e `item_id` do modelo (registrados em `.env`, fora do git: `ID_WORKSPACE`, `ID_MODELO_SEMANTICO`).
 
 ---
 
@@ -388,20 +407,20 @@ RETURN
 ### 8.1 Scaffold
 
 ```bash
-npm create @microsoft/rayfin@latest -- "app_blacksmith_dre" --template dataapp --workspace ws_blacksmith_financeiro
+npm create @microsoft/rayfin@latest -- "app_blacksmith_dre" --template dataapp
 cd app_blacksmith_dre
+npm install
 npx rayfin login
-npx rayfin connector add --type fabric-semanticmodel \
-  --workspace-id <workspace_id> --item-id <item_id_sm_blacksmith_dre> \
-  --name modelo_dre --operations executeQuery
-# rodar o npm install com versão casada que o comando acima imprimir
-npm run build
+# conexão com o modelo pelo fabric-app-data (gera fabric.yaml, fora do git; modelo em fabric.example.yaml)
+npx fabric-app-data add semanticModel modelo_dre -w <workspace-id> -i <item-id-sm_blacksmith_dre>
+npm run build    # gera src/fabric.generated.ts e o dist/
 ```
 
-Antes de codar, inspecionar o projeto gerado e reaproveitar o que o template já oferece: autenticação Fabric, cliente do conector, padrões de query DAX, data grid, formatação por format string e validação no navegador. **Não** criar outro fluxo de login.
+Template `dataapp` com Rayfin CLI 1.36.2. A conexão usa o `@microsoft/fabric-app-data` (alias `modelo_dre` no `fabric.yaml`), não o `rayfin connector add`; no `rayfin/rayfin.yml` só `auth` (Fabric SSO) e `staticHosting` ficam ligados (`data`, `storage` e `functions` desligados). Reaproveitado do template, sem alteração de fluxo: autenticação Fabric (`AuthGate`, `use-auth`), `getFabricClient()`, `VegaVisual`, `DataGrid`, `useCssTheme()`, `toDataTable` e o validador headless `validate:visual`. **Não** criar outro fluxo de login.
 
 ### 8.2 Bibliotecas extras
-- `d3-sankey` + `d3-shape` + `d3-scale` para o Sankey (o template não traz Sankey pronto).
+- `d3-sankey`: só o `sankeyLinkHorizontal` (desenho dos links). O layout é próprio (`dados/layout_sankey.ts`): colunas fixas por `coluna_sankey` e posição do nó de prejuízo (seção 8.4).
+- `d3-shape` + `d3-scale`: sparklines dos cartões de KPI.
 - Fontes da Carbon, empacotadas com `@fontsource` (sem chamada a Google Fonts): `IBM Plex Sans` (títulos e texto, `@fontsource-variable/ibm-plex-sans`) e `IBM Plex Mono` (números, `@fontsource/ibm-plex-mono`, pesos 400 e 500).
 
 ### 8.3 Estrutura de pastas (snake_case)
@@ -409,10 +428,17 @@ Antes de codar, inspecionar o projeto gerado e reaproveitar o que o template já
 ```
 src/
   dados/
-    cliente_modelo.ts          # wrapper de client.connectors.modelo_dre.executeQuery()
+    cliente_modelo.ts          # hook useConsulta sobre getFabricClient().semanticModel("modelo_dre").query(): confere status, descarta respostas antigas
     construtor_filtros.ts      # monta TREATAS a partir do estado dos filtros (whitelist)
     consultas_dax.ts           # todas as queries da seção 8.5
-    formatacao.ts              # usa as format strings do modelo
+    formatacao.ts              # format strings copiadas do modelo + locale pt-BR (overrideFormattingLocale)
+    layout_sankey.ts           # layout do Sankey por coluna_sankey, posição do nó de prejuízo
+    linhas_dre.ts              # junta as contas (q_dre) com os subtotais (q_dre_subtotais)
+    visuais/                   # specs Vega-Lite + fábricas usadas pelo validate:visual
+      tendencia.ts
+      regioes.ts
+      detalhe_no.ts
+    fixtures/*.json            # respostas reais capturadas (scripts/capturar_fixtures.mjs), só para testes
   estado/
     estado_filtros.ts          # ano, intervalo de meses, regiões, cenário e seleção cruzada
     estado_tema.ts             # tema escuro (padrão) / claro, guardado no navegador
@@ -431,14 +457,22 @@ src/
   tema/
     tokens_tema.css
     tema_graficos.ts
-  pagina_principal.tsx
+  global.css                   # tokens do template apontando para os da Carbon + utilitários por papel
+  pagina_principal.tsx         # consultas em paralelo, estado e grade
+  main.tsx, App.tsx, hooks/, lib/, services/, components/   # do template
+  *.spec.ts                    # testes vitest ao lado de cada módulo
+scripts/
+  validar_consultas.mjs        # roda as consultas reais do app e compara com validacao/referencias.json
+  capturar_fixtures.mjs        # grava as fixtures dos testes
 ```
+
+As fixtures só alimentam testes unitários; o app em execução nunca as lê (regra 6).
 
 ### 8.4 Layout (desktop, grade de 12 colunas; empilha no mobile)
 
-1. **cabecalho_app**: "Blacksmith" (Plex Sans semibold) + "DRE" (light), sem gradiente; subtítulo "Do faturamento ao lucro"; data da última carga; botão de tema (☀ claro / ☾ escuro).
+1. **cabecalho_app**: "Blacksmith" (Plex Sans semibold) + "DRE" (light), sem gradiente; subtítulo "Do faturamento ao lucro · DRE em Sankey"; data da última carga (`q_carga`); botão de tema (ícones `Sun`/`Moon` do lucide).
 2. **barra_filtros** (fixa no topo): ano (2024/2025/2026/todos), intervalo de meses, regiões (multi), cenário (realizado/orçado). Padrão: último ano, todas as regiões, realizado. Mostra a seleção cruzada ativa ("Seleção: Mar/2025, Abr/2025 ✕") e "Restaurar padrão".
-3. **Linha de KPIs** (6 cartões): receita líquida, lucro bruto, EBITDA, lucro líquido, margem líquida, variação vs orçado. Cada cartão traz valor (Plex Sans light, números tabulares), variação vs ano anterior (▲ verde / ▼ laranja) e sparkline de 12 meses. Os KPIs são alvo da filtragem cruzada.
+3. **Linha de KPIs** (6 cartões): receita líquida, lucro bruto, EBITDA, lucro líquido, margem líquida e lucro líquido vs orçado (com receita vs orçado na linha secundária). Cada cartão traz valor (Plex Sans light, números tabulares), variação vs ano anterior (▲ verde / ▼ laranja; na margem, em p.p.) e sparkline com os últimos 12 pontos de `q_tendencia`. Os KPIs são alvo da filtragem cruzada.
 4. **grafico_sankey** (largura total, altura ~560 px, peça central):
    - colunas pela `coluna_sankey`; cor do nó pelo `tipo_no` na paleta do tema ativo (`cor_por_tipo_no`). `dim_no_sankey[cor_hex]` não é usada pelo app, porque não muda com o tema;
    - ignorar links sem valor (a medida devolve vazio), para que os nós zerados desapareçam;
@@ -451,8 +485,8 @@ src/
    - no mobile, rolagem horizontal dentro do próprio contêiner.
 5. **grafico_tendencia** (8 colunas): receita líquida (área ciano chapada, 16% de opacidade) e lucro líquido (linha verde) por `mes_ano`; margem líquida no eixo secundário (linha roxa tracejada). Fonte da filtragem cruzada por mês.
 6. **grafico_regioes** (4 colunas): barras horizontais de receita líquida por região com a margem líquida em rótulo. Fonte da filtragem cruzada por região.
-7. **tabela_dre** (8 colunas): data grid do template com linhas da DRE em `ordem_dre`, colunas realizado, orçado, variação %, com subtotais destacados (lucro bruto, EBITDA, EBIT, LAIR, lucro líquido). Alvo da filtragem cruzada.
-8. **painel_operacional** (4 colunas): clientes ativos, novos clientes, churn, NPS, headcount, receita por cliente e por colaborador. Alvo da filtragem cruzada.
+7. **tabela_dre** (8 colunas): data grid do template com linhas da DRE em `ordem_dre`, colunas realizado, orçado, variação %; subtotais pelas medidas do modelo (`q_dre_subtotais`): receita bruta e receita líquida como subtotal simples, lucro bruto, EBITDA, EBIT, LAIR e lucro líquido destacados. Alvo da filtragem cruzada.
+8. **painel_operacional** (4 colunas): clientes ativos, novos clientes, churn, NPS, headcount, receita por cliente e por colaborador. Só existe realizado: ignora o filtro de cenário e mostra um aviso quando o cenário é orçado. Alvo da filtragem cruzada.
 
 Todos os componentes têm estados de carregamento (skeleton da Carbon), vazio e erro.
 
@@ -472,7 +506,7 @@ Regras:
 - **Clique** seleciona; **Ctrl/Shift/⌘ + clique** soma ou retira pontos; clicar de novo no mesmo ponto, no fundo do visual, no ✕ da barra ou **Esc** limpa.
 - O visual de origem **não é filtrado** pela própria seleção: mostra todos os pontos e esmaece os não selecionados (opacidade 0,3); a tendência marca os meses selecionados com uma faixa de fundo (`layer-selected` da Carbon) e pontos nas séries. Por isso as consultas dos visuais por mês usam `sem_mes` e a de regiões usa `sem_regiao`.
 - Uma seleção por vez: selecionar em outro visual descarta a anterior. Mudar qualquer filtro da barra também limpa a seleção.
-- A seleção fica **dentro** dos filtros da barra: só filtram meses do intervalo e regiões do filtro de regiões (os demais aparecem esmaecidos e o clique neles é ignorado). Meses vêm de `q_calendario` e regiões de `dim_regiao` (whitelist); valor fora do domínio derruba a consulta com erro.
+- A seleção fica **dentro** dos filtros da barra: só filtram meses do intervalo e regiões do filtro de regiões (o clique nos demais é ignorado; regiões fora do filtro aparecem esmaecidas e, sem seleção, a tendência marca os meses do intervalo com uma faixa de fundo). Meses vêm de `q_calendario` e regiões de `dim_regiao` (whitelist); valor fora do domínio derruba a consulta com erro.
 - O esmaecimento vem do estado do painel (spec), não do destaque interno do visual (`capabilities: { disableSelfHighlight: true, disableLineChartCrosshairTooltip: true }`); quando a seleção muda por fora, o visual de origem é recriado (chave de versão) para não guardar uma seleção que o painel já descartou.
 - Linhas e áreas não identificam o mês clicado: a tendência tem uma faixa transparente por mês, por cima das séries, que recebe o clique e a dica.
 - Os subtítulos mostram o recorte efetivo ("2025 · seleção: Mar/2025 · Todas as regiões · Realizado").
@@ -485,31 +519,28 @@ O `construtor_filtros.ts` gera os filtros abaixo **apenas com valores vindos das
 -- exemplo de filtros gerados
 TREATAS ( { "realizado" }, dim_cenario[cod_cenario] ),
 TREATAS ( { 2026 }, dim_calendario[ano] ),
+TREATAS ( { 3, 4 }, dim_calendario[mes] ),            -- intervalo de meses da barra (omitido no ano inteiro)
 TREATAS ( { "sudeste", "sul" }, dim_regiao[cod_regiao] )
 -- com seleção cruzada (seção 8.4.1), fora dos visuais de origem
 TREATAS ( { 15, 16 }, dim_calendario[indice_mes] )   -- meses clicados
 TREATAS ( { "sul" }, dim_regiao[cod_regiao] )        -- regiões clicadas (substitui o filtro de regiões)
 ```
 
-**q_calendario** (domínio da seleção por mês e rótulos `mes_ano`)
-```dax
-EVALUATE
-SUMMARIZECOLUMNS ( dim_calendario[indice_mes], dim_calendario[ano], dim_calendario[mes], dim_calendario[mes_ano] )
-ORDER BY dim_calendario[indice_mes]
-```
+Opções do construtor: `sem_mes` (sem intervalo nem seleção de meses: tendência e detalhe do nó), `sem_regiao` (regiões) e `sem_cenario` (DRE, subtotais e operacional).
+
+**Domínio e dimensões** (sem filtros): `q_anos` (`DISTINCT ( dim_calendario[ano] )`), `q_calendario` (`indice_mes`, `ano`, `mes`, `mes_ano`: domínio da seleção por mês e rótulos), `q_meses` (`mes`, `nome_mes`), `q_cenarios` (`dim_cenario`), `q_regioes_lista` (`dim_regiao`), `q_sankey_nos` (`dim_no_sankey ORDER BY coluna_sankey`) e `q_carga` (`ROW ( "data_ultima_carga", [data_ultima_carga] )`).
 
 **q_kpis**
 ```dax
 EVALUATE
 SUMMARIZECOLUMNS (
     <filtros>,
-    "receita_liquida", [receita_liquida],
-    "lucro_bruto", [lucro_bruto],
-    "ebitda", [ebitda],
-    "lucro_liquido", [lucro_liquido],
-    "margem_liquida", [margem_liquida],
-    "var_receita_liquida_aa_pct", [var_receita_liquida_aa_pct],
-    "var_lucro_liquido_aa_pct", [var_lucro_liquido_aa_pct],
+    "receita_liquida", [receita_liquida], "lucro_bruto", [lucro_bruto], "ebitda", [ebitda],
+    "lucro_liquido", [lucro_liquido], "margem_liquida", [margem_liquida], "prejuizo_liquido", [prejuizo_liquido],
+    "var_receita_liquida_aa_pct", [var_receita_liquida_aa_pct], "var_lucro_bruto_aa_pct", [var_lucro_bruto_aa_pct],
+    "var_ebitda_aa_pct", [var_ebitda_aa_pct], "var_lucro_liquido_aa_pct", [var_lucro_liquido_aa_pct],
+    "var_margem_liquida_aa_pp", [var_margem_liquida_aa_pp],
+    "var_receita_liquida_orcado_pct", [var_receita_liquida_orcado_pct],
     "var_lucro_liquido_orcado_pct", [var_lucro_liquido_orcado_pct]
 )
 ```
@@ -517,42 +548,40 @@ SUMMARIZECOLUMNS (
 **q_sankey_links**
 ```dax
 EVALUATE
-SUMMARIZECOLUMNS (
-    dim_link_sankey[ordem_link], dim_link_sankey[cod_no_origem], dim_link_sankey[cod_no_destino],
-    dim_link_sankey[tipo_link], dim_link_sankey[etapa],
-    <filtros>,
-    "valor", [sankey_valor]
+FILTER (
+    SUMMARIZECOLUMNS (
+        dim_link_sankey[ordem_link], dim_link_sankey[cod_no_origem], dim_link_sankey[cod_no_destino],
+        dim_link_sankey[tipo_link], dim_link_sankey[etapa],
+        <filtros>,
+        "valor", [sankey_valor], "valor_aa", [sankey_valor_aa], "var_aa_pct", [var_sankey_valor_aa_pct]
+    ),
+    NOT ISBLANK ( [valor] )
 )
 ORDER BY dim_link_sankey[ordem_link]
 ```
-SUMMARIZECOLUMNS já remove os links com valor vazio.
+Com `valor_aa` na consulta, o SUMMARIZECOLUMNS mantém links que só têm valor no ano anterior; o `FILTER` os remove.
 
-**q_sankey_nos**
-```dax
-EVALUATE dim_no_sankey ORDER BY dim_no_sankey[coluna_sankey]
-```
-
-**q_tendencia**
+**q_tendencia** (também alimenta as sparklines dos KPIs)
 ```dax
 EVALUATE
 SUMMARIZECOLUMNS (
     dim_calendario[indice_mes], dim_calendario[mes_ano],
     <filtros_sem_mes>,
-    "receita_liquida", [receita_liquida],
-    "lucro_liquido", [lucro_liquido],
-    "margem_liquida", [margem_liquida]
+    "receita_liquida", [receita_liquida], "lucro_bruto", [lucro_bruto], "ebitda", [ebitda],
+    "lucro_liquido", [lucro_liquido], "margem_liquida", [margem_liquida],
+    "var_lucro_liquido_orcado_pct", [var_lucro_liquido_orcado_pct]
 )
 ORDER BY dim_calendario[indice_mes]
 ```
+Meses com `lucro_liquido < 0` ganham um ponto vermelho (Red 50 / Red 60) e o rótulo "prejuízo". Cada camada interna do spec declara `title: null` no `y`: o `VegaVisual` copia o `displayName` da coluna para todo canal sem título, e o título concatenado zerava a altura do gráfico.
 
-**q_regioes**
+**q_regioes** (`cod_regiao` é o campo da seleção cruzada)
 ```dax
 EVALUATE
 SUMMARIZECOLUMNS (
-    dim_regiao[nome_regiao],
+    dim_regiao[cod_regiao], dim_regiao[nome_regiao],
     <filtros_sem_regiao>,
-    "receita_liquida", [receita_liquida],
-    "margem_liquida", [margem_liquida]
+    "receita_liquida", [receita_liquida], "margem_liquida", [margem_liquida], "lucro_liquido", [lucro_liquido]
 )
 ORDER BY [receita_liquida] DESC
 ```
@@ -560,15 +589,19 @@ ORDER BY [receita_liquida] DESC
 **q_dre**
 ```dax
 EVALUATE
-SUMMARIZECOLUMNS (
-    dim_conta[ordem_dre], dim_conta[nome_conta], dim_conta[nome_grupo],
-    <filtros_sem_cenario>,
-    "realizado", CALCULATE ( [valor_dre], dim_cenario[cod_cenario] = "realizado" ),
-    "orcado", CALCULATE ( [valor_dre], dim_cenario[cod_cenario] = "orcado" )
+ADDCOLUMNS (
+    SUMMARIZECOLUMNS (
+        dim_conta[ordem_dre], dim_conta[cod_conta], dim_conta[nome_conta], dim_conta[cod_grupo],
+        <filtros_sem_cenario>,
+        "realizado", CALCULATE ( [valor_dre], dim_cenario[cod_cenario] = "realizado" ),
+        "orcado", CALCULATE ( [valor_dre], dim_cenario[cod_cenario] = "orcado" )
+    ),
+    "var_pct", DIVIDE ( [realizado] - [orcado], ABS ( [orcado] ) )
 )
 ORDER BY dim_conta[ordem_dre]
 ```
-Subtotais (lucro bruto, EBITDA etc.) calculados no front a partir das linhas, ou via uma segunda query com as medidas de subtotal.
+
+**q_dre_subtotais**: um `DATATABLE` com os subtotais (`receita_bruta`, `receita_liquida`, `lucro_bruto`, `ebitda`, `ebit_lucro_operacional`, `lair`, `lucro_liquido`) e a posição de cada um (`apos_ordem_dre`), com o rótulo de `dim_no_sankey[nome_no]` e realizado, orçado e `var_pct` pelas medidas do modelo, filtrado por `<filtros_sem_cenario>`. O `linhas_dre.ts` intercala os subtotais com as contas.
 
 **q_operacional**
 ```dax
@@ -582,40 +615,43 @@ SUMMARIZECOLUMNS (
 )
 ```
 
-**q_detalhe_no** (valor do nó = soma das entradas; para nós de receita e `prejuizo_liquido`, que só têm saídas, usar `cod_no_origem`)
+**q_detalhe_no** (valor do nó = soma das entradas; para nós de receita e `prejuizo_liquido`, que só têm saídas, usa `cod_no_origem`). `cod_no` é validado contra `dim_no_sankey` antes de entrar na consulta.
 ```dax
 EVALUATE
 SUMMARIZECOLUMNS (
     dim_calendario[indice_mes], dim_calendario[mes_ano],
     <filtros_sem_mes>,
-    "valor", SUMX ( FILTER ( ALL ( dim_link_sankey ), dim_link_sankey[cod_no_destino] = "<cod_no>" ), [sankey_valor] )
+    "valor", SUMX ( FILTER ( ALL ( dim_link_sankey ), dim_link_sankey[cod_no_destino] = "<cod_no>" ), [sankey_valor] ),
+    "valor_aa", SUMX ( FILTER ( ALL ( dim_link_sankey ), dim_link_sankey[cod_no_destino] = "<cod_no>" ), [sankey_valor_aa] ),
+    "lucro_liquido", [lucro_liquido]
 )
 ORDER BY dim_calendario[indice_mes]
 ```
-No grafico_tendencia, marcar os meses com `lucro_liquido < 0` com um ponto vermelho (Red 50 / Red 60) e um rótulo "prejuízo".
+Barras do valor mensal (contorno vermelho nos meses de prejuízo) e linha roxa tracejada do ano anterior.
 
 Regras: verificar o `status` de cada resposta antes de passar colunas e linhas aos visuais; disparar as queries em paralelo; não duplicar queries.
 
 ### 8.6 Deploy e distribuição
-- Rodar build e a validação no navegador do template; corrigir erros de TypeScript.
-- Publicar no workspace pelo Rayfin CLI (confirmar o comando com `npx rayfin --help`).
+- Validar localmente: `npm run build`, `npm test`, `npm run lint`, `npm run validate:visual -- <fábrica.ts> <contexto-json>` (render headless dos specs com dados reais) e `npm run validar:consultas` (consultas reais × `validacao/referencias.json`). Os dois últimos exigem `az login`.
+- Publicar: `npx rayfin up --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre` e conferir com `npx rayfin up status --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre`. O deploy grava `rayfin/.deployments.json` e `rayfin/.env` (fora do git) e acrescenta a URL de hospedagem em `rayfin.yml` (não versionar).
+- Desenvolvimento: `npm run dev` (o `predev` roda `rayfin env`, que lê o `rayfin/.env` criado pelo primeiro `rayfin up`); abrir o item no portal com `&devUri=http://localhost:5173` no fim da URL.
 - Limitação atual do preview: apps ligados a modelo semântico só funcionam abertos dentro do portal do Fabric.
-- Opcional: incluir o app e o modelo num **org app** do workspace para distribuição com audiências.
+- Opcional (não feito): incluir o app e o modelo num **org app** do workspace para distribuição com audiências.
 
 ### Pronto quando
-- [ ] Build sem erros e validação do navegador ok.
-- [ ] KPIs batem com a aba `dre_anual` para 2024, 2025 e 2026.
-- [ ] Sankey fecha visualmente (largura de entrada = saída em cada nó) para qualquer combinação de filtros.
-- [ ] mar/2025 e abr/2025 mostram o nó de prejuízo com os valores da seção 1; o ano de 2025 inteiro não mostra.
-- [ ] abr/2025 só Sudeste: prejuízo; abr/2025 só Sul: lucro.
-- [ ] Trocar o cenário para orçado atualiza todos os visuais.
-- [ ] Estados de loading, vazio e erro testados (ex.: remover permissão temporariamente).
-- [ ] Layout ok em 1440 px, 1024 px e 390 px.
+- [x] Build sem erros; `validate:visual` e testes unitários ok (só o teste do template `validate-visual.spec.mjs` falha, como no template).
+- [x] KPIs batem com `validacao/referencias.json` para 2024, 2025 e 2026.
+- [x] Sankey fecha (entrada = saída em cada nó) nos recortes de mês e ano × cenário, consolidado e por região (`validar:consultas`).
+- [x] mar/2025 e abr/2025 mostram o nó de prejuízo com os valores da seção 1; o ano de 2025 inteiro não mostra.
+- [x] abr/2025 só Sudeste: prejuízo; abr/2025 só Sul: lucro.
+- [x] Trocar o cenário para orçado atualiza todos os visuais.
+- [x] Estados de loading, vazio e erro testados.
+- [x] Layout ok em 1440 px, 1024 px e 390 px.
 - [ ] Abre no tema escuro; o botão do cabeçalho troca para o claro (e volta) em todos os visuais, inclusive Sankey, Vega e data grid, e a escolha persiste ao recarregar.
 - [ ] Contraste AA nos dois temas (texto ≥ 4,5:1; marcas de gráfico ≥ 3:1).
 - [ ] Filtragem cruzada: em 2025, clicar em mar/2025 na tendência mostra o prejuízo de R$ 2,59 mi nos KPIs e o nó de prejuízo no Sankey; Ctrl+clique em abr/2025 soma os dois meses; clicar no Sudeste com abr/2025 selecionado na barra mostra prejuízo; Esc limpa.
 - [ ] O visual de origem não se filtra (só esmaece) e a seleção some ao mudar um filtro da barra ou ao selecionar em outro visual.
-- [ ] `npm run validar:consultas` sem falhas (inclui os recortes de filtragem cruzada).
+- [x] `npm run validar:consultas` sem falhas (inclui os recortes de filtragem cruzada).
 
 ---
 
@@ -642,12 +678,12 @@ Base: [Carbon Design System](https://carbondesignsystem.com) — temas de UI g10
 | `--cor_prejuizo` | `#da1e28` Red 60 | `#fa4d56` Red 50 | **exclusivo de prejuízo** (preenchimentos) |
 | `--cor_prejuizo_texto` | `#da1e28` | `#ff8389` | texto de prejuízo e erro (text-error) |
 
-Tipografia: `--fonte_titulo` e `--fonte_texto` = IBM Plex Sans; `--fonte_numero` = IBM Plex Mono. Forma: `--raio: 0px` (tiles, botões e campos retos; selos em pílula). Movimento: `--duracao_curta: 110ms`, `--duracao_media: 240ms`, curva `cubic-bezier(0, 0, 0.38, 0.9)` (Carbon productive).
+Tipografia: `--fonte_titulo` e `--fonte_texto` = IBM Plex Sans; `--fonte_numero` = IBM Plex Mono. Forma: `--raio: 0px` (tiles, botões e campos retos; selos em pílula). Movimento: `--duracao_curta: 110ms`, `--duracao_media: 240ms`, curva `cubic-bezier(0, 0, 0.38, 0.9)` (Carbon productive). Também existem `--cor_texto_inverso`, `--espaco` e `--curva_entrada`.
 
-O `global.css` aponta os tokens do template (`--color-background`, `--color-card`, `--color-border`, `--color-ring`…) para estes e expõe utilitários Tailwind por papel: `text-receita`, `text-lucro`, `text-custo`, `bg-prejuizo`, `text-prejuizo-texto`, `bg-selecionado`, `text-interativo`, `text-texto-fraco`. Nunca usar hex fixo em componente: usar o utilitário (CSS) ou a paleta do tema (TS). A paleta categórica do template (`--color-data-1..10`) é a categórica da Carbon na ordem da documentação, com valores próprios em cada tema.
+O `global.css` aponta os tokens do template (`--color-background`, `--color-card`, `--color-border`, `--color-ring`…) para estes e expõe utilitários Tailwind por papel: `text-receita`, `text-lucro`, `text-custo`, `bg-prejuizo`, `text-prejuizo-texto`, `bg-selecionado`, `text-interativo`, `text-texto-fraco`. Nunca usar hex fixo em componente: usar o utilitário (CSS) ou a paleta do tema (TS). A paleta categórica do template (`--color-data-1..10`) é a categórica da Carbon na ordem da documentação, com valores próprios em cada tema. O `--color-primary` do template fica fixo em `#0f62fe` nos dois temas; o azul que muda com o tema é `--cor_interativo`.
 
 ### 9.2 Diretrizes
-- Superfícies chapadas: cartão = `--cor_superficie` com borda `--cor_borda` de 1 px; sem sombra, desfoque (`backdrop-filter`), brilho (`drop-shadow`, `box-shadow` colorido), gradiente, grade de fundo ou neon.
+- Superfícies chapadas: cartão = `--cor_superficie` com borda `--cor_borda` de 1 px; sem sombra, desfoque (`backdrop-filter`), brilho (`drop-shadow`, `box-shadow` colorido), gradiente, grade de fundo ou neon. Única exceção: o brilho que percorre o skeleton de carregamento (`linear-gradient` em `global.css`), como no skeleton da Carbon.
 - Tipografia leve: títulos de cartão Plex Sans 16 px semibold; rótulos e textos 12–14 px regular, sem caixa alta nem espaçamento de letras; números grandes (KPIs, operacional) em Plex Sans **light** com `tabular-nums`; números de tabela, eixo e tooltip em Plex Mono 400.
 - Semântica de cor fixa: ciano = receita; roxo = totais e orçado; laranja = custo e queda; verde = lucro e alta; vermelho = prejuízo (uso exclusivo). Botão ativo da barra de filtros = superfície invertida (`bg-foreground text-background`).
 - Gráficos sem gradiente (regra da Carbon: nunca usar gradiente no lugar de paleta). Áreas com preenchimento chapado de baixa opacidade; links do Sankey na cor do destino.
@@ -679,6 +715,8 @@ A coluna `dim_no_sankey[cor_hex]` ainda guarda a paleta antiga (neon) e só serv
 
 Se o Fabric App não estiver liberado no tenant, publicar um relatório `rpt_blacksmith_dre` sobre o mesmo `sm_blacksmith_dre` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4, a filtragem cruzada nativa do Power BI (mesmos papéis da seção 8.4.1: Sankey só destaca) e dois temas JSON (escuro g100 e claro g10) com as cores e a fonte IBM Plex da seção 9. Distribuir via org app.
 
+Não implementado: o Fabric App foi liberado no tenant, e o repositório não tem relatório nem temas JSON.
+
 ---
 
 ## 11. Roteiro do "momento prejuízo" na demo
@@ -696,8 +734,9 @@ Se o Fabric App não estiver liberado no tenant, publicar um relatório `rpt_bla
 ## 12. Ordem de execução para o Claude
 
 1. Confirmar com o usuário os pré‑requisitos da Fase 0 (não é possível checar o tenant sozinho).
-2. Gerar os notebooks `nb_01_ingestao`, `nb_02_qualidade` e `nb_03_atualizar_modelo` em `fabric/` (formato Git do Fabric) e implantar com o fab CLI (`fab import … --format .py`, `fab job run`).
-3. Gerar as medidas da seção 7.3 em TMDL (`fabric/sm_blacksmith_dre.SemanticModel/`) e implantar com `fab import -f`, seguido de refresh.
+2. Gerar os notebooks `nb_01_ingestao`, `nb_02_qualidade` e `nb_03_atualizar_modelo` e o pipeline `pl_blacksmith_carga` em `fabric/` (formato Git do Fabric, com marcadores `{{ID_*}}` no lugar dos IDs, seção 3) e implantar com o fab CLI: `uv run fabric/ids_ambiente.py implantar`, depois `fab import … -i .implantacao/fabric/<item> --format .py -f` e `fab job run`.
+3. Gerar as medidas da seção 7.3 em TMDL (`fabric/sm_blacksmith_dre.SemanticModel/`) e implantar com `fab import -f` (a partir de `.implantacao/fabric/`), seguido de refresh.
 4. Fazer o scaffold do app (seção 8.1), inspecionar o template e só então implementar os componentes. Todo componente novo ou alterado segue o tema Carbon nos dois temas (seção 9) e o papel de filtragem cruzada da seção 8.4.1.
 5. Validar contra os números da seção 1 a cada fase e registrar o resultado em `docs/log_validacao.md`.
 6. Nunca usar dados reais de clientes; parar e perguntar se aparecer qualquer arquivo que não seja a base fictícia.
+7. Nunca versionar IDs do tenant (workspace, lakehouse, itens, capacidade, tenant), URLs de hospedagem ou chaves: antes de cada commit, `uv run fabric/ids_ambiente.py anonimizar` e conferir o `git diff`.
