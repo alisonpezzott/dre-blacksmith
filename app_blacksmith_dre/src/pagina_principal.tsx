@@ -1,12 +1,24 @@
 // Página principal: lê as dimensões, mantém os filtros e dispara as consultas em
 // paralelo (uma por resultado, sem duplicar), repassando cada resultado ao seu visual.
+// Filtragem cruzada como no Power BI: clicar num mês (tendência, evolução do nó) ou numa
+// região filtra os demais visuais; Ctrl+clique soma pontos; Esc ou o botão da barra limpa.
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type { InteractionEvent } from "@microsoft/fabric-visuals-core";
 
 import { numero, texto, useConsulta, type Linha } from "@/dados/cliente_modelo";
-import { cenarios, meses_do_intervalo, regioes_filtradas, type Cenario, type DominioFiltros } from "@/dados/construtor_filtros";
+import {
+    cenarios,
+    meses_do_intervalo,
+    meses_selecionados,
+    regioes_filtradas,
+    regioes_selecionadas,
+    type Cenario,
+    type DominioFiltros,
+} from "@/dados/construtor_filtros";
 import {
     q_anos,
+    q_calendario,
     q_carga,
     q_cenarios,
     q_detalhe_no,
@@ -25,7 +37,8 @@ import {
 import { formatos, type Formato } from "@/dados/formatacao";
 import { no_so_de_saida, type LinkSankeyEntrada, type NoSankeyEntrada } from "@/dados/layout_sankey";
 import { filtros_padrao, useEstadoFiltros } from "@/estado/estado_filtros";
-import { paleta_graficos } from "@/tema/tema_graficos";
+import { valores_da_interacao } from "@/estado/selecao_cruzada";
+import { cor_por_tipo_no, usePaletaGraficos, type PaletaGraficos } from "@/tema/tema_graficos";
 import { BarraFiltros, type OpcoesBarraFiltros } from "./componentes/barra_filtros";
 import { CabecalhoApp } from "./componentes/cabecalho_app";
 import { CartaoKpi } from "./componentes/cartao_kpi";
@@ -50,7 +63,7 @@ interface DefinicaoKpi {
     formato_variacao: Formato;
     rotulo_variacao: string;
     campo_serie: string;
-    cor: string;
+    cor: keyof PaletaGraficos;
 }
 
 const kpis: DefinicaoKpi[] = [
@@ -62,7 +75,7 @@ const kpis: DefinicaoKpi[] = [
         formato_variacao: formatos.variacao_pct,
         rotulo_variacao: "vs ano anterior",
         campo_serie: "receita_liquida",
-        cor: paleta_graficos.receita,
+        cor: "receita",
     },
     {
         titulo: "Lucro bruto",
@@ -72,7 +85,7 @@ const kpis: DefinicaoKpi[] = [
         formato_variacao: formatos.variacao_pct,
         rotulo_variacao: "vs ano anterior",
         campo_serie: "lucro_bruto",
-        cor: paleta_graficos.lucro,
+        cor: "lucro",
     },
     {
         titulo: "EBITDA",
@@ -82,7 +95,7 @@ const kpis: DefinicaoKpi[] = [
         formato_variacao: formatos.variacao_pct,
         rotulo_variacao: "vs ano anterior",
         campo_serie: "ebitda",
-        cor: paleta_graficos.lucro,
+        cor: "lucro",
     },
     {
         titulo: "Lucro líquido",
@@ -92,7 +105,7 @@ const kpis: DefinicaoKpi[] = [
         formato_variacao: formatos.variacao_pct,
         rotulo_variacao: "vs ano anterior",
         campo_serie: "lucro_liquido",
-        cor: paleta_graficos.lucro,
+        cor: "lucro",
     },
     {
         titulo: "Margem líquida",
@@ -102,7 +115,7 @@ const kpis: DefinicaoKpi[] = [
         formato_variacao: formatos.variacao_pp,
         rotulo_variacao: "vs ano anterior",
         campo_serie: "margem_liquida",
-        cor: paleta_graficos.total,
+        cor: "total",
     },
     {
         titulo: "Lucro líquido vs orçado",
@@ -112,13 +125,16 @@ const kpis: DefinicaoKpi[] = [
         formato_variacao: formatos.variacao_pct,
         rotulo_variacao: "receita vs orçado",
         campo_serie: "var_lucro_liquido_orcado_pct",
-        cor: paleta_graficos.total,
+        cor: "total",
     },
 ];
 
 export function PaginaPrincipal() {
+    const paleta = usePaletaGraficos();
+
     // dimensões e metadados (consultas fixas, disparadas juntas na abertura)
     const anos = useConsulta(q_anos);
+    const calendario = useConsulta(q_calendario);
     const meses = useConsulta(q_meses);
     const regioes_lista = useConsulta(q_regioes_lista);
     const cenarios_lista = useConsulta(q_cenarios);
@@ -126,12 +142,19 @@ export function PaginaPrincipal() {
     const carga = useConsulta(q_carga);
 
     const dominio = useMemo<DominioFiltros | undefined>(() => {
-        if (!anos.linhas || !regioes_lista.linhas) return undefined;
+        if (!anos.linhas || !regioes_lista.linhas || !calendario.linhas) return undefined;
         return {
             anos: anos.linhas.map((l) => numero(l, "ano")).filter((a): a is number => a !== null),
             regioes: sem_vazios(regioes_lista.linhas, "cod_regiao").map((l) => texto(l, "cod_regiao")),
+            indices_mes: calendario.linhas.map((l) => numero(l, "indice_mes")).filter((i): i is number => i !== null),
         };
-    }, [anos.linhas, regioes_lista.linhas]);
+    }, [anos.linhas, regioes_lista.linhas, calendario.linhas]);
+
+    /** indice_mes → "Mar/2025", para o rótulo da seleção cruzada. */
+    const rotulos_mes = useMemo(
+        () => new Map((calendario.linhas ?? []).map((l) => [numero(l, "indice_mes"), texto(l, "mes_ano")])),
+        [calendario.linhas],
+    );
 
     const opcoes = useMemo<OpcoesBarraFiltros | undefined>(() => {
         if (!dominio || !meses.linhas || !cenarios_lista.linhas) return undefined;
@@ -149,10 +172,24 @@ export function PaginaPrincipal() {
         };
     }, [dominio, meses.linhas, regioes_lista.linhas, cenarios_lista.linhas]);
 
-    const [filtros, acoes] = useEstadoFiltros(dominio);
+    const [filtros, acoes, versoes] = useEstadoFiltros(dominio);
     const ctx = useMemo<ContextoConsulta | undefined>(
         () => (filtros && dominio ? { filtros, dominio } : undefined),
         [filtros, dominio],
+    );
+
+    // recortes derivados do estado, memorizados para não recompilar os specs a cada render
+    const recortes = useMemo(
+        () =>
+            ctx
+                ? {
+                    intervalo: meses_do_intervalo(ctx.filtros),
+                    meses_sel: meses_selecionados(ctx.filtros, ctx.dominio),
+                    regioes_filtro: regioes_filtradas(ctx.filtros, ctx.dominio),
+                    regioes_sel: regioes_selecionadas(ctx.filtros, ctx.dominio),
+                }
+                : undefined,
+        [ctx],
     );
 
     const nos_sankey = useMemo<NoSankeyEntrada[] | undefined>(
@@ -171,6 +208,17 @@ export function PaginaPrincipal() {
 
     const [cod_no_selecionado, selecionar_no] = useState<string | null>(null);
     const no_selecionado = nos_sankey?.find((no) => no.cod_no === cod_no_selecionado);
+
+    // Esc limpa a seleção cruzada, como clicar no fundo do visual de origem
+    const tem_selecao = Boolean(filtros?.selecao);
+    useEffect(() => {
+        if (!tem_selecao) return;
+        const ao_teclar = (evento: KeyboardEvent) => {
+            if (evento.key === "Escape") acoes.limpar_selecao();
+        };
+        window.addEventListener("keydown", ao_teclar);
+        return () => window.removeEventListener("keydown", ao_teclar);
+    }, [tem_selecao, acoes]);
 
     // consultas filtradas: cada uma uma vez, todas em paralelo
     const kpi = useConsulta(ctx ? q_kpis(ctx) : null);
@@ -204,7 +252,7 @@ export function PaginaPrincipal() {
         [links.linhas],
     );
 
-    const erro_dimensoes = anos.erro ?? meses.erro ?? regioes_lista.erro ?? cenarios_lista.erro ?? nos.erro;
+    const erro_dimensoes = anos.erro ?? calendario.erro ?? meses.erro ?? regioes_lista.erro ?? cenarios_lista.erro ?? nos.erro;
 
     if (erro_dimensoes) {
         return (
@@ -214,7 +262,7 @@ export function PaginaPrincipal() {
         );
     }
 
-    if (!filtros || !opcoes || !dominio || !ctx) {
+    if (!filtros || !opcoes || !dominio || !ctx || !recortes) {
         return (
             <Moldura carga={carga}>
                 <EstadoCarregando className="h-96" rotulo="Lendo as dimensões do modelo…" />
@@ -222,17 +270,62 @@ export function PaginaPrincipal() {
         );
     }
 
+    /** Clique num visual por mês: só meses do calendário e do intervalo da barra filtram. */
+    const interagir_meses = (origem: string) => (eventos: InteractionEvent[]) => {
+        const valores = valores_da_interacao(eventos, "indice_mes");
+        if (valores === null) {
+            acoes.limpar_selecao(origem);
+            return;
+        }
+        const validos = valores.filter(
+            (v): v is number =>
+                typeof v === "number"
+                && (dominio.indices_mes ?? []).includes(v)
+                && (recortes.intervalo === null || recortes.intervalo.includes(((v - 1) % 12) + 1)),
+        );
+        acoes.selecionar({ origem, campo: "indice_mes", valores: validos });
+    };
+
+    /** Clique no gráfico de regiões: só regiões do filtro da barra filtram. */
+    const interagir_regioes = (eventos: InteractionEvent[]) => {
+        const valores = valores_da_interacao(eventos, "cod_regiao");
+        if (valores === null) {
+            acoes.limpar_selecao("regioes");
+            return;
+        }
+        const validos = valores.filter(
+            (v): v is string =>
+                typeof v === "string"
+                && dominio.regioes.includes(v)
+                && (recortes.regioes_filtro === null || recortes.regioes_filtro.includes(v)),
+        );
+        acoes.selecionar({ origem: "regioes", campo: "cod_regiao", valores: validos });
+    };
+
+    const rotulo_selecao = recortes.meses_sel
+        ? recortes.meses_sel.map((i) => rotulos_mes.get(i) ?? String(i)).join(", ")
+        : recortes.regioes_sel
+            ? recortes.regioes_sel.map((cod) => opcoes.regioes.find((r) => r.cod_regiao === cod)?.nome_regiao ?? cod).join(", ")
+            : null;
+
     const linha_kpi = kpi.linhas?.[0];
     const serie_12 = (tendencia.linhas ?? []).slice(-12);
     const prejuizo = (numero(linha_kpi, "prejuizo_liquido") ?? 0) > 0;
-    const recorte = descrever_recorte(ctx, opcoes);
-    const recorte_sem_mes = descrever_recorte(ctx, opcoes, { sem_mes: true });
-    const recorte_sem_regiao = descrever_recorte(ctx, opcoes, { sem_regiao: true });
-    const recorte_sem_cenario = descrever_recorte(ctx, opcoes, { sem_cenario: true });
+    const descrever = (omitir?: OmitirRecorte) => descrever_recorte(ctx, opcoes, rotulos_mes, omitir);
+    const recorte = descrever();
+    const recorte_sem_mes = descrever({ sem_mes: true });
+    const recorte_sem_regiao = descrever({ sem_regiao: true });
+    const recorte_sem_cenario = descrever({ sem_cenario: true });
 
     return (
         <Moldura carga={carga}>
-            <BarraFiltros filtros={filtros} acoes={acoes} opcoes={opcoes} padrao={filtros_padrao(dominio)} />
+            <BarraFiltros
+                filtros={filtros}
+                acoes={acoes}
+                opcoes={opcoes}
+                padrao={filtros_padrao(dominio)}
+                rotulo_selecao={rotulo_selecao}
+            />
 
             <section aria-label="Indicadores principais" className="grid grid-cols-2 gap-grid md:grid-cols-3 xl:grid-cols-6">
                 {kpis.map((definicao) => (
@@ -245,7 +338,7 @@ export function PaginaPrincipal() {
                         formato_variacao={definicao.formato_variacao}
                         rotulo_variacao={definicao.rotulo_variacao}
                         serie={serie_12.map((l) => numero(l, definicao.campo_serie))}
-                        cor={definicao.campo === "lucro_liquido" && prejuizo ? paleta_graficos.prejuizo : definicao.cor}
+                        cor={definicao.campo === "lucro_liquido" && prejuizo ? paleta.prejuizo : paleta[definicao.cor]}
                         carregando={kpi.carregando && !linha_kpi}
                         prejuizo={definicao.campo === "lucro_liquido" && prejuizo}
                     />
@@ -255,16 +348,15 @@ export function PaginaPrincipal() {
 
             <Cartao
                 titulo="Do faturamento ao lucro"
-                subtitulo={`${recorte} · clique num nó para ver a evolução mensal`}
-                destaque
+                subtitulo={`${recorte} · clique num nó para destacar os fluxos e ver a evolução mensal`}
                 acoes={
                     <Legenda
                         itens={[
-                            { rotulo: "Receitas", cor: paleta_graficos.receita },
-                            { rotulo: "Totais", cor: paleta_graficos.total },
-                            { rotulo: "Custos e despesas", cor: paleta_graficos.custo },
-                            { rotulo: "Lucros", cor: paleta_graficos.lucro },
-                            { rotulo: "Prejuízo", cor: paleta_graficos.prejuizo },
+                            { rotulo: "Receitas", cor: paleta.receita },
+                            { rotulo: "Totais", cor: paleta.total },
+                            { rotulo: "Custos e despesas", cor: paleta.custo },
+                            { rotulo: "Lucros", cor: paleta.lucro },
+                            { rotulo: "Prejuízo", cor: paleta.prejuizo },
                         ]}
                     />
                 }
@@ -282,29 +374,39 @@ export function PaginaPrincipal() {
 
             {no_selecionado && (
                 <PainelDetalheNo
+                    key={`detalhe_no_${no_selecionado.cod_no}_${versoes.detalhe_no ?? 0}`}
                     nome_no={no_selecionado.nome_no}
-                    cor={no_selecionado.cor_hex || paleta_graficos.total}
+                    cor={cor_por_tipo_no(paleta, no_selecionado.tipo_no)}
                     tabela={detalhe.tabela}
                     carregando={detalhe.carregando}
                     erro={detalhe.erro}
                     subtitulo={recorte_sem_mes}
+                    selecionados={recortes.meses_sel}
+                    ao_interagir={interagir_meses("detalhe_no")}
                     ao_fechar={() => selecionar_no(null)}
                 />
             )}
 
             <div className="grid grid-cols-1 gap-grid lg:grid-cols-12">
                 <GraficoTendencia
+                    key={`tendencia_${versoes.tendencia ?? 0}`}
                     tabela={tendencia.tabela}
                     carregando={tendencia.carregando}
                     erro={tendencia.erro}
                     subtitulo={recorte_sem_mes}
+                    intervalo={recortes.intervalo}
+                    selecionados={recortes.meses_sel}
+                    ao_interagir={interagir_meses("tendencia")}
                     className="lg:col-span-8"
                 />
                 <GraficoRegioes
+                    key={`regioes_${versoes.regioes ?? 0}`}
                     tabela={regioes.tabela}
                     carregando={regioes.carregando}
                     erro={regioes.erro}
-                    selecionadas={regioes_filtradas(filtros, dominio)}
+                    no_filtro={recortes.regioes_filtro}
+                    selecionadas={recortes.regioes_sel}
+                    ao_interagir={interagir_regioes}
                     subtitulo={recorte_sem_regiao}
                     className="lg:col-span-4"
                 />
@@ -346,25 +448,44 @@ function Moldura({ carga, children }: { carga: ReturnType<typeof useConsulta>; c
     );
 }
 
-/** Texto do recorte filtrado, para os subtítulos ("2025 · Mar a Abr · Sudeste · Realizado"). */
+interface OmitirRecorte {
+    sem_mes?: boolean;
+    sem_regiao?: boolean;
+    sem_cenario?: boolean;
+}
+
+/**
+ * Texto do recorte filtrado, para os subtítulos ("2025 · Mar a Abr · Sudeste · Realizado").
+ * A seleção cruzada aparece no lugar do filtro que ela refina, e some dos visuais que a originam.
+ */
 function descrever_recorte(
     ctx: ContextoConsulta,
     opcoes: OpcoesBarraFiltros,
-    omitir: { sem_mes?: boolean; sem_regiao?: boolean; sem_cenario?: boolean } = {},
+    rotulos_mes: Map<number | null, string>,
+    omitir: OmitirRecorte = {},
 ): string {
     const { filtros, dominio } = ctx;
     const partes = [filtros.ano === null ? "Todos os anos" : String(filtros.ano)];
-    const meses = meses_do_intervalo(filtros);
-    if (!omitir.sem_mes && meses) {
-        const nome = (mes: number) => opcoes.meses.find((m) => m.mes === mes)?.nome_mes ?? String(mes);
-        partes.push(meses.length === 1 ? nome(meses[0]) : `${nome(meses[0])} a ${nome(meses[meses.length - 1])}`);
+    if (!omitir.sem_mes) {
+        const selecionados = meses_selecionados(filtros, dominio);
+        const meses = meses_do_intervalo(filtros);
+        if (selecionados) {
+            partes.push(`seleção: ${selecionados.map((i) => rotulos_mes.get(i) ?? String(i)).join(", ")}`);
+        } else if (meses) {
+            const nome = (mes: number) => opcoes.meses.find((m) => m.mes === mes)?.nome_mes ?? String(mes);
+            partes.push(meses.length === 1 ? nome(meses[0]) : `${nome(meses[0])} a ${nome(meses[meses.length - 1])}`);
+        }
     }
     if (!omitir.sem_regiao) {
+        const nome = (cod: string) => opcoes.regioes.find((r) => r.cod_regiao === cod)?.nome_regiao ?? cod;
+        const selecionadas = regioes_selecionadas(filtros, dominio);
         const regioes = regioes_filtradas(filtros, dominio);
         partes.push(
-            regioes
-                ? regioes.map((cod) => opcoes.regioes.find((r) => r.cod_regiao === cod)?.nome_regiao ?? cod).join(", ")
-                : "Todas as regiões",
+            selecionadas
+                ? `seleção: ${selecionadas.map(nome).join(", ")}`
+                : regioes
+                    ? regioes.map(nome).join(", ")
+                    : "Todas as regiões",
         );
     }
     if (!omitir.sem_cenario) {

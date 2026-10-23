@@ -29,11 +29,11 @@ function valor_celula(formato: typeof formatos.moeda | typeof formatos.variacao_
                 className={cn(
                     "numero block w-full text-right",
                     tipo === "destaque" && "font-semibold text-foreground",
-                    tipo === "subtotal" && "font-medium text-foreground",
+                    tipo === "subtotal" && "text-foreground",
                     tipo === "conta" && "text-muted-foreground",
-                    colorir && n !== null && n > 0 && "text-turquesa",
-                    colorir && n !== null && n < 0 && "text-laranja",
-                    !colorir && tipo === "destaque" && n !== null && n < 0 && "text-rosa-neon",
+                    colorir && n !== null && n > 0 && "text-lucro",
+                    colorir && n !== null && n < 0 && "text-custo",
+                    !colorir && tipo === "destaque" && n !== null && n < 0 && "text-prejuizo-texto",
                 )}
             >
                 {formatar(n, formato)}
@@ -55,8 +55,8 @@ const colunas: GridColumnDef[] = [
                     className={cn(
                         "block truncate",
                         tipo === "conta" && "pl-4 text-muted-foreground",
-                        tipo === "subtotal" && "font-medium text-foreground",
-                        tipo === "destaque" && "font-heading font-semibold text-ciano",
+                        tipo === "subtotal" && "text-foreground",
+                        tipo === "destaque" && "font-semibold text-foreground",
                     )}
                 >
                     {String(valor ?? "")}

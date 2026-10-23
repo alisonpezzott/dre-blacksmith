@@ -1,8 +1,9 @@
 // Barra de filtros fixa no topo: ano, intervalo de meses, regiões e cenário.
-// As opções vêm das dimensões do modelo (rótulos das colunas nome_*).
+// As opções vêm das dimensões do modelo (rótulos das colunas nome_*). Mostra também a
+// seleção cruzada ativa (pontos clicados nos visuais), com o botão para limpá-la.
 
 import type { ReactNode } from "react";
-import { Calendar, Layers, MapPin, RotateCcw } from "lucide-react";
+import { Calendar, Filter, Layers, MapPin, RotateCcw, X } from "lucide-react";
 
 import type { Cenario, EstadoFiltros } from "@/dados/construtor_filtros";
 import type { AcoesFiltros } from "@/estado/estado_filtros";
@@ -20,6 +21,8 @@ interface BarraFiltrosProps {
     acoes: AcoesFiltros;
     opcoes: OpcoesBarraFiltros;
     padrao: EstadoFiltros;
+    /** rótulo da seleção cruzada ("Mar/2025, Abr/2025"); `null` = sem seleção */
+    rotulo_selecao: string | null;
 }
 
 function Botao({
@@ -40,11 +43,11 @@ function Botao({
             aria-pressed={ativo}
             aria-label={rotulo}
             className={cn(
-                "rounded-lg border px-3 py-1.5 text-200 font-medium transition-colors duration-200 ease-out",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "border px-3 py-1.5 text-200 transition-colors duration-100 ease-out",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                 ativo
-                    ? "border-ciano/60 bg-ciano/15 text-foreground shadow-brilho-ciano"
-                    : "border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground",
+                    ? "border-transparent bg-foreground text-background"
+                    : "border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
             )}
         >
             {children}
@@ -65,14 +68,14 @@ function Grupo({ icone, rotulo, children }: { icone: ReactNode; rotulo: string; 
 }
 
 const classe_select =
-    "rounded-lg border border-border bg-superficie px-2 py-1.5 text-200 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "border-0 border-b border-borda-forte bg-superficie-2 px-2 py-1.5 text-200 text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function BarraFiltros({ filtros, acoes, opcoes, padrao }: BarraFiltrosProps) {
+export function BarraFiltros({ filtros, acoes, opcoes, padrao, rotulo_selecao }: BarraFiltrosProps) {
     const todas_regioes = filtros.regioes.length === 0;
-    const alterado = JSON.stringify(filtros) !== JSON.stringify(padrao);
+    const alterado = JSON.stringify({ ...filtros, selecao: null }) !== JSON.stringify({ ...padrao, selecao: null });
 
     return (
-        <div className="sticky top-0 z-30 -mx-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
+        <div className="sticky top-0 z-30 -mx-4 border-b border-border bg-background px-4 py-3">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <Grupo icone={<Calendar className="icon-size-200" aria-hidden="true" />} rotulo="Ano">
                     {opcoes.anos.map((ano) => (
@@ -139,16 +142,32 @@ export function BarraFiltros({ filtros, acoes, opcoes, padrao }: BarraFiltrosPro
                     ))}
                 </Grupo>
 
+                {rotulo_selecao && (
+                    <div
+                        className="flex items-center gap-1.5 rounded-full bg-selecionado py-1 pr-1 pl-3 text-200 text-foreground"
+                        role="status"
+                    >
+                        <Filter className="icon-size-100" aria-hidden="true" />
+                        <span>
+                            Seleção: <span className="numero">{rotulo_selecao}</span>
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => acoes.limpar_selecao()}
+                            aria-label="Limpar seleção cruzada"
+                            title="Limpar seleção (Esc)"
+                            className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            <X className="icon-size-100" aria-hidden="true" />
+                        </button>
+                    </div>
+                )}
+
                 {alterado && (
                     <button
                         type="button"
-                        onClick={() => {
-                            acoes.definir_ano(padrao.ano);
-                            acoes.definir_meses(padrao.mes_inicio, padrao.mes_fim);
-                            acoes.limpar_regioes();
-                            acoes.definir_cenario(padrao.cenario);
-                        }}
-                        className="ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-200 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={acoes.restaurar_padrao}
+                        className="ml-auto flex items-center gap-1.5 px-2 py-1.5 text-200 text-interativo hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         <RotateCcw className="icon-size-200" aria-hidden="true" />
                         Restaurar padrão

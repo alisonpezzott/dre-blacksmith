@@ -1,4 +1,4 @@
-// Estados de carregamento (skeleton com shimmer ciano), vazio e erro.
+// Estados de carregamento (skeleton da Carbon), vazio e erro.
 
 import type { ReactNode } from "react";
 import { AlertTriangle, Inbox } from "lucide-react";
@@ -32,9 +32,9 @@ export function EstadoErro({ erro, titulo = "Não foi possível consultar o mode
     return (
         <div
             role="alert"
-            className="flex w-full items-start gap-3 rounded-xl border border-rosa-neon/40 bg-rosa-neon/10 p-4 text-left"
+            className="flex w-full items-start gap-3 border-l-4 border-prejuizo bg-muted p-4 text-left"
         >
-            <AlertTriangle className="mt-0.5 icon-size-300 shrink-0 text-rosa-neon" aria-hidden="true" />
+            <AlertTriangle className="mt-0.5 icon-size-300 shrink-0 text-prejuizo-texto" aria-hidden="true" />
             <div className="min-w-0">
                 <p className="text-300 font-semibold text-foreground">{titulo}</p>
                 <p className="mt-1 break-words text-200 text-muted-foreground">{erro.message}</p>
@@ -43,24 +43,22 @@ export function EstadoErro({ erro, titulo = "Não foi possível consultar o mode
     );
 }
 
-/** Cartão padrão do painel (vidro escuro), com título e subtítulo. */
+/** Cartão padrão do painel (tile da Carbon), com título e subtítulo. */
 export function Cartao({
     titulo,
     subtitulo,
     acoes,
     children,
     className,
-    destaque = false,
 }: {
     titulo?: string;
     subtitulo?: string;
     acoes?: ReactNode;
     children: ReactNode;
     className?: string;
-    destaque?: boolean;
 }) {
     return (
-        <section className={cn("cartao_vidro flex min-w-0 flex-col p-4", destaque && "linha_marca", className)}>
+        <section className={cn("cartao flex min-w-0 flex-col p-4", className)}>
             {(titulo || acoes) && (
                 <header className="mb-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">

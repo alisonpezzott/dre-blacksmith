@@ -5,116 +5,123 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Tema único dark high-tech: os tokens do template apontam para os valores de
-   tema/tokens_tema.css, então o bloco .dark repete os mesmos valores. */
+/* Dois temas Carbon: claro (g10) nos valores padrão e escuro (g100) com a classe .dark
+   no <html>, que é o padrão do app. Os tokens do template apontam para tema/tokens_tema.css;
+   só a paleta categórica dos visuais precisa de valores literais por tema. */
 
 /* These tokens are consumed directly as CSS variables, so emit them
    even when no Tailwind utility references them. */
 @theme static {
-  --color-brand:            #00E5FF;  /* bar/area fills, button-like brand surfaces */
-  --color-brand-foreground: #00E5FF;  /* line/point marks, branded text & emphasis */
-  --color-hover:            #111833;  /* row/cell hover surface in DataGrid + visuals */
+  --color-brand:            var(--cor_interativo);        /* bar/area fills, button-like brand surfaces */
+  --color-brand-foreground: var(--cor_interativo);        /* line/point marks, branded text & emphasis */
+  --color-hover:            var(--cor_superficie_hover);  /* row/cell hover surface in DataGrid + visuals */
 
-  /* paleta categórica dos visuais: semântica da seção 9 e variações de contraste */
-  --color-data-1:  #00E5FF;
-  --color-data-2:  #14F1C6;
-  --color-data-3:  #A855F7;
-  --color-data-4:  #FF7A1A;
-  --color-data-5:  #FF3DCB;
-  --color-data-6:  #7DD3FC;
-  --color-data-7:  #5EEAD4;
-  --color-data-8:  #C4B5FD;
-  --color-data-9:  #FDBA74;
-  --color-data-10: #F9A8D4;
+  /* paleta categórica da Carbon, tema claro, na ordem da documentação */
+  --color-data-1:  #6929c4;  /* Purple 70 */
+  --color-data-2:  #1192e8;  /* Cyan 50 */
+  --color-data-3:  #005d5d;  /* Teal 70 */
+  --color-data-4:  #9f1853;  /* Magenta 70 */
+  --color-data-5:  #fa4d56;  /* Red 50 */
+  --color-data-6:  #570408;  /* Red 90 */
+  --color-data-7:  #198038;  /* Green 60 */
+  --color-data-8:  #002d9c;  /* Blue 80 */
+  --color-data-9:  #ee538b;  /* Magenta 50 */
+  --color-data-10: #b28600;  /* Yellow 50 */
 
   --font-page-title: var(--font-heading);
   --font-page-subtitle: var(--font-base);
   --font-visual-title: var(--font-heading);
   --font-visual-subtitle: var(--font-base);
   --font-data-label: var(--font-numeric);
-  --text-page-title: var(--text-600);
+  --text-page-title: var(--text-500);
   --text-page-subtitle: var(--text-300);
   --text-visual-title: var(--text-400);
   --text-visual-subtitle: var(--text-200);
-  --text-data-label: 11px;
+  --text-data-label: 12px;
+}
 
-  /* acentos do tema como utilitários (text-ciano, bg-rosa-neon...) */
-  --color-ciano: #00E5FF;
-  --color-turquesa: #14F1C6;
-  --color-laranja: #FF7A1A;
-  --color-roxo: #A855F7;
-  --color-rosa-neon: #FF3DCB;
-  --color-superficie: #0B1020;
-  --color-superficie-2: #111833;
-  --color-texto-fraco: #55627D;
+/* cores do tema como utilitários (text-receita, bg-prejuizo, border-borda-forte...) */
+@theme inline {
+  --color-receita: var(--cor_receita);
+  --color-total: var(--cor_total);
+  --color-custo: var(--cor_custo);
+  --color-lucro: var(--cor_lucro);
+  --color-prejuizo: var(--cor_prejuizo);
+  --color-prejuizo-texto: var(--cor_prejuizo_texto);
+  --color-interativo: var(--cor_interativo);
+  --color-superficie: var(--cor_superficie);
+  --color-superficie-2: var(--cor_superficie_2);
+  --color-selecionado: var(--cor_selecionado);
+  --color-borda-forte: var(--cor_borda_forte);
+  --color-texto-fraco: var(--cor_texto_fraco);
+  --color-texto-inverso: var(--cor_texto_inverso);
 }
 
 @theme {
   /* Color tokens
      Usage: bg-*, text-*, border-* (e.g. bg-primary text-primary-foreground)
      Each token has a -foreground pair for text on that surface. */
-  --color-background: #05070F;                                       /* page background */
-  --color-foreground: #E6F1FF;                                       /* default text */
+  --color-background: var(--cor_fundo);                 /* page background */
+  --color-foreground: var(--cor_texto);                 /* default text */
 
-  --color-card: rgba(11, 16, 32, 0.85);                              /* card surfaces (vidro escuro) */
-  --color-card-foreground: #E6F1FF;
+  --color-card: var(--cor_superficie);                  /* card surfaces (layer-01) */
+  --color-card-foreground: var(--cor_texto);
 
-  --color-popover: rgba(11, 16, 32, 0.95);                           /* popover/dropdown surfaces */
-  --color-popover-foreground: #E6F1FF;
+  --color-popover: var(--cor_superficie);               /* popover/dropdown surfaces */
+  --color-popover-foreground: var(--cor_texto);
 
-  --color-primary: #00E5FF;                                          /* primary actions & buttons */
-  --color-primary-foreground: #05070F;
+  --color-primary: #0f62fe;                             /* primary actions & buttons (Blue 60) */
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #111833;                                        /* secondary actions */
-  --color-secondary-foreground: #E6F1FF;
+  --color-secondary: var(--cor_superficie_2);           /* secondary actions */
+  --color-secondary-foreground: var(--cor_texto);
 
-  --color-muted: #111833;                                            /* subtle backgrounds */
-  --color-muted-foreground: #8A9BB8;                                 /* subdued text */
+  --color-muted: var(--cor_superficie_2);               /* subtle backgrounds */
+  --color-muted-foreground: var(--cor_texto_suave);     /* subdued text */
 
-  --color-accent: #111833;                                           /* accent highlights */
-  --color-accent-foreground: #E6F1FF;
+  --color-accent: var(--cor_superficie_hover);          /* accent highlights */
+  --color-accent-foreground: var(--cor_texto);
 
-  --color-destructive: #FF3DCB;                                      /* errors & destructive actions */
-  --color-destructive-foreground: #05070F;
+  --color-destructive: var(--cor_prejuizo);             /* errors & destructive actions */
+  --color-destructive-foreground: #ffffff;
 
-  --color-success: #14F1C6;                                          /* success surfaces */
-  --color-success-foreground: #05070F;
+  --color-success: var(--cor_lucro);                    /* success surfaces */
+  --color-success-foreground: #161616;
 
-  --color-border: rgba(0, 229, 255, 0.14);                           /* default border */
-  --color-input: rgba(0, 229, 255, 0.35);                            /* input field borders */
-  --color-ring: #00E5FF;                                             /* focus rings */
+  --color-border: var(--cor_borda);                     /* default border */
+  --color-input: var(--cor_borda_forte);                /* input field borders */
+  --color-ring: var(--cor_foco);                        /* focus rings */
 
   /* Elevation shadows — keyed by resting elevation in px.
      Usage: shadow-* (e.g. shadow-8, shadow-64) */
-  --shadow-2:  0 0 2px rgba(0, 0, 0, 0.40), 0 1px 2px rgba(0, 0, 0, 0.50);
-  --shadow-4:  0 0 2px rgba(0, 0, 0, 0.40), 0 2px 4px rgba(0, 0, 0, 0.50);
-  --shadow-8:  0 0 2px rgba(0, 0, 0, 0.40), 0 4px 8px rgba(0, 0, 0, 0.50);
-  --shadow-16: 0 0 2px rgba(0, 0, 0, 0.40), 0 8px 16px rgba(0, 0, 0, 0.50);
-  --shadow-28: 0 0 8px rgba(0, 0, 0, 0.40), 0 14px 28px rgba(0, 0, 0, 0.50);
-  --shadow-64: 0 0 8px rgba(0, 0, 0, 0.40), 0 32px 64px rgba(0, 0, 0, 0.50);
-  --shadow-brilho-ciano: 0 0 24px rgba(0, 229, 255, 0.35);
-  --shadow-brilho-rosa: 0 0 24px rgba(255, 61, 203, 0.40);
+  --shadow-2:  0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-4:  0 2px 4px rgba(0, 0, 0, 0.20);
+  --shadow-8:  0 2px 6px rgba(0, 0, 0, 0.30);
+  --shadow-16: 0 4px 8px rgba(0, 0, 0, 0.30);
+  --shadow-28: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --shadow-64: 0 8px 24px rgba(0, 0, 0, 0.30);
 
+  /* a Carbon usa cantos retos: raio padrão 0 e utilitários discretos */
   --radius-none: 0;
-  --radius-sm: calc(4px * var(--radius-scale, 1));
-  --radius-md: calc(6px * var(--radius-scale, 1));
-  --radius-lg: calc(8px * var(--radius-scale, 1));
-  --radius-xl: calc(10px * var(--radius-scale, 1));
-  --radius-2xl: calc(14px * var(--radius-scale, 1));
-  --radius-3xl: calc(18px * var(--radius-scale, 1));
-  --radius-4xl: calc(24px * var(--radius-scale, 1));
-  --radius-5xl: calc(32px * var(--radius-scale, 1));
-  --radius-6xl: calc(40px * var(--radius-scale, 1));
+  --radius-sm: calc(2px * var(--radius-scale, 1));
+  --radius-md: calc(2px * var(--radius-scale, 1));
+  --radius-lg: calc(4px * var(--radius-scale, 1));
+  --radius-xl: calc(4px * var(--radius-scale, 1));
+  --radius-2xl: calc(4px * var(--radius-scale, 1));
+  --radius-3xl: calc(8px * var(--radius-scale, 1));
+  --radius-4xl: calc(8px * var(--radius-scale, 1));
+  --radius-5xl: calc(8px * var(--radius-scale, 1));
+  --radius-6xl: calc(8px * var(--radius-scale, 1));
   --radius-full: calc(9999px * var(--radius-scale, 1));
-  --radius: calc(14px * var(--radius-scale, 1));
+  --radius: 0px;
 
   /* Spacing base unit
      Usage: p-*, m-*, gap-* (e.g. p-4 gap-3) */
   --spacing: 4px;
 
-  /* Font Sizes — 100-based scale
+  /* Font Sizes — 100-based scale (escala de tipos da Carbon)
      Usage: text-* (e.g. text-300, text-hero-900) */
-  --text-100: 10px;
+  --text-100: 11px;
   --text-200: 12px;
   --text-300: 14px;
   --text-400: 16px;
@@ -122,12 +129,12 @@
   --text-600: 24px;
   --text-hero-700: 28px;
   --text-hero-800: 32px;
-  --text-hero-900: 40px;
-  --text-hero-1000: 68px;
+  --text-hero-900: 42px;
+  --text-hero-1000: 54px;
 
   /* Line Heights — paired with font sizes
      Usage: leading-* (e.g. leading-300) */
-  --leading-100: 14px;
+  --leading-100: 16px;
   --leading-200: 16px;
   --leading-300: 20px;
   --leading-400: 22px;
@@ -135,22 +142,23 @@
   --leading-600: 32px;
   --leading-hero-700: 36px;
   --leading-hero-800: 40px;
-  --leading-hero-900: 52px;
-  --leading-hero-1000: 92px;
+  --leading-hero-900: 50px;
+  --leading-hero-1000: 64px;
 
-  /* Font Weights
+  /* Font Weights: a Carbon usa light (300), regular (400) e semibold (600)
      Usage: font-* (e.g. font-semibold) */
+  --font-weight-light: 300;
   --font-weight-regular: 400;
-  --font-weight-medium: 500;
+  --font-weight-medium: 400;
   --font-weight-semibold: 600;
-  --font-weight-bold: 700;
+  --font-weight-bold: 600;
 
-  /* Font Families (empacotadas com @fontsource, sem chamada externa)
+  /* Font Families (IBM Plex empacotada com @fontsource, sem chamada externa)
      Usage: font-* (e.g. font-heading, font-base) */
-  --font-heading: "Space Grotesk Variable", "Space Grotesk", "Segoe UI", system-ui, sans-serif;  /* títulos */
-  --font-base: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;                     /* texto */
-  --font-monospace: "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-  --font-numeric: "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, monospace; /* números */
+  --font-heading: var(--fonte_titulo);
+  --font-base: var(--fonte_texto);
+  --font-monospace: var(--fonte_numero);
+  --font-numeric: var(--fonte_numero);
 
   /* Icon Sizes — 100-based scale
      Usage: icon-size-* custom utility (e.g. icon-size-200) */
@@ -173,41 +181,18 @@
 }
 
 @layer base {
+  /* paleta categórica da Carbon, tema escuro */
   .dark {
-    --color-background: #05070F;
-    --color-foreground: #E6F1FF;
-
-    --color-card: rgba(11, 16, 32, 0.85);
-    --color-card-foreground: #E6F1FF;
-
-    --color-popover: rgba(11, 16, 32, 0.95);
-    --color-popover-foreground: #E6F1FF;
-
-    --color-primary: #00E5FF;
-    --color-primary-foreground: #05070F;
-
-    --color-secondary: #111833;
-    --color-secondary-foreground: #E6F1FF;
-
-    --color-muted: #111833;
-    --color-muted-foreground: #8A9BB8;
-
-    --color-accent: #111833;
-    --color-accent-foreground: #E6F1FF;
-
-    --color-destructive: #FF3DCB;
-    --color-destructive-foreground: #05070F;
-
-    --color-success: #14F1C6;
-    --color-success-foreground: #05070F;
-
-    --color-border: rgba(0, 229, 255, 0.14);
-    --color-input: rgba(0, 229, 255, 0.35);
-    --color-ring: #00E5FF;
-
-    --color-brand:            #00E5FF;
-    --color-brand-foreground: #00E5FF;
-    --color-hover:            #111833;
+    --color-data-1:  #8a3ffc;  /* Purple 60 */
+    --color-data-2:  #33b1ff;  /* Cyan 40 */
+    --color-data-3:  #007d79;  /* Teal 60 */
+    --color-data-4:  #ff7eb6;  /* Magenta 40 */
+    --color-data-5:  #fa4d56;  /* Red 50 */
+    --color-data-6:  #fff1f1;  /* Red 10 */
+    --color-data-7:  #6fdc8c;  /* Green 30 */
+    --color-data-8:  #4589ff;  /* Blue 50 */
+    --color-data-9:  #d12771;  /* Magenta 60 */
+    --color-data-10: #d2a106;  /* Yellow 40 */
   }
 }
 
@@ -219,9 +204,8 @@
   body {
     @apply text-foreground antialiased;
     font-family: var(--fonte_texto);
-    background: var(--grade_fundo), var(--cor_fundo_gradiente);
-    background-size: 32px 32px, 32px 32px, auto;
-    background-attachment: fixed;
+    background: var(--cor_fundo);
+    transition: background-color var(--duracao_media) var(--curva_entrada), color var(--duracao_media) var(--curva_entrada);
   }
 
   select,
@@ -233,33 +217,16 @@
 }
 
 @layer components {
-  /* cartão em vidro escuro (seção 9.2) */
-  .cartao_vidro {
-    background: var(--cor_superficie_vidro);
-    backdrop-filter: blur(12px);
+  /* tile da Carbon: superfície layer-01, sem sombra nem desfoque */
+  .cartao {
+    background: var(--cor_superficie);
     border: 1px solid var(--cor_borda);
     border-radius: var(--raio);
-    transition: border-color var(--duracao_curta) ease-out, box-shadow var(--duracao_curta) ease-out;
+    transition: border-color var(--duracao_curta) var(--curva_entrada);
   }
 
-  .cartao_vidro:hover,
-  .cartao_vidro:focus-within {
+  .cartao:focus-within {
     border-color: var(--cor_borda_forte);
-    box-shadow: var(--brilho_ciano);
-  }
-
-  /* linha de 2 px com o gradiente da marca no topo */
-  .linha_marca {
-    position: relative;
-  }
-
-  .linha_marca::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 2px;
-    border-radius: var(--raio) var(--raio) 0 0;
-    background: var(--gradiente_marca);
   }
 
   .numero {
@@ -267,7 +234,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* skeleton com shimmer ciano */
+  /* skeleton da Carbon: faixa clara que percorre a superfície */
   .esqueleto {
     position: relative;
     overflow: hidden;
@@ -280,23 +247,23 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.10), transparent);
-    animation: shimmer 1.4s ease-out infinite;
+    background: linear-gradient(90deg, transparent, var(--cor_superficie_hover), transparent);
+    animation: shimmer 1.4s var(--curva_entrada) infinite;
   }
 
-  /* Sankey: fluxo de entrada e pulso do prejuízo */
+  /* Sankey: fluxo de entrada e esmaecimento dos nós fora do destaque */
   .sankey_link {
-    transition: stroke-opacity var(--duracao_curta) ease-out;
+    transition: stroke-opacity var(--duracao_curta) var(--curva_entrada);
+  }
+
+  .sankey_no {
+    transition: opacity var(--duracao_curta) var(--curva_entrada);
   }
 
   .sankey_link_entrada {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    animation: fluxo var(--duracao_media) ease-out forwards;
-  }
-
-  .sankey_pulso {
-    animation: pulso 2.4s ease-in-out infinite;
+    animation: fluxo var(--duracao_media) var(--curva_entrada) forwards;
   }
 }
 
@@ -312,18 +279,8 @@
   }
 }
 
-@keyframes pulso {
-  0%, 100% {
-    opacity: 0.45;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .esqueleto::after,
-  .sankey_pulso {
+  .esqueleto::after {
     animation: none;
   }
 
@@ -333,7 +290,10 @@
     stroke-dashoffset: 0;
   }
 
-  .cartao_vidro {
+  body,
+  .cartao,
+  .sankey_link,
+  .sankey_no {
     transition: none;
   }
 }

@@ -40,6 +40,11 @@ export const q_anos = `EVALUATE
 DISTINCT ( dim_calendario[ano] )
 ORDER BY dim_calendario[ano]`;
 
+/** Meses do calendário: domínio da seleção cruzada por mês e rótulos dos meses selecionados. */
+export const q_calendario = `EVALUATE
+SUMMARIZECOLUMNS ( dim_calendario[indice_mes], dim_calendario[ano], dim_calendario[mes], dim_calendario[mes_ano] )
+ORDER BY dim_calendario[indice_mes]`;
+
 export const q_meses = `EVALUATE
 SUMMARIZECOLUMNS ( dim_calendario[mes], dim_calendario[nome_mes] )
 ORDER BY dim_calendario[mes]`;

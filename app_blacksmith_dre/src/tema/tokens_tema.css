@@ -1,49 +1,77 @@
-/* Tokens do tema dark high-tech (seção 9.1 do CLAUDE.md).
+/* Tokens do tema (seção 9 do CLAUDE.md), apoiados no IBM Carbon Design System:
+   tema escuro = Carbon g100 (padrão, classe .dark no <html>); tema claro = Carbon g10.
+   Cores dos dados: paletas de visualização da Carbon
+   (https://www.carbondesignsystem.com/data-visualization/color-palettes).
    O global.css mapeia os tokens do template (--color-*, --font-*) para estes. */
 
 :root {
-  /* superfícies */
-  --cor_fundo: #05070F;
-  --cor_fundo_gradiente: radial-gradient(1200px 600px at 15% -10%, #0B2A3A 0%, transparent 60%),
-                         radial-gradient(900px 500px at 110% 10%, #2A0F45 0%, transparent 55%),
-                         #05070F;
-  --cor_superficie: #0B1020;
-  --cor_superficie_vidro: rgba(11, 16, 32, 0.85);
-  --cor_superficie_2: #111833;
-  --cor_borda: rgba(0, 229, 255, 0.14);
-  --cor_borda_forte: rgba(0, 229, 255, 0.35);
+  /* superfícies (g10) */
+  --cor_fundo: #f4f4f4;            /* background */
+  --cor_superficie: #ffffff;       /* layer-01 */
+  --cor_superficie_2: #f4f4f4;     /* layer-02 */
+  --cor_superficie_hover: #e8e8e8; /* layer-hover-01 */
+  --cor_selecionado: #e0e0e0;      /* layer-selected-01 */
+  --cor_borda: #e0e0e0;            /* border-subtle-01 */
+  --cor_borda_forte: #8d8d8d;      /* border-strong-01 */
 
   /* texto */
-  --cor_texto: #E6F1FF;
-  --cor_texto_suave: #8A9BB8;
-  --cor_texto_fraco: #55627D;
+  --cor_texto: #161616;            /* text-primary */
+  --cor_texto_suave: #525252;      /* text-secondary */
+  --cor_texto_fraco: #6f6f6f;      /* text-helper */
+  --cor_texto_inverso: #ffffff;    /* text-on-color */
 
-  /* acentos */
-  --cor_ciano: #00E5FF;       /* receitas, foco, links ativos */
-  --cor_turquesa: #14F1C6;    /* lucros, variação positiva */
-  --cor_laranja: #FF7A1A;     /* custos/despesas, variação negativa */
-  --cor_roxo: #A855F7;        /* totais intermediários, orçado */
-  --cor_rosa_neon: #FF3DCB;   /* exclusivo de prejuízo */
+  /* interação */
+  --cor_interativo: #0f62fe;       /* button-primary, link-primary (Blue 60) */
+  --cor_foco: #0f62fe;             /* focus */
 
-  /* efeitos */
-  --brilho_ciano: 0 0 24px rgba(0, 229, 255, 0.35);
-  --brilho_turquesa: 0 0 24px rgba(20, 241, 198, 0.30);
-  --brilho_laranja: 0 0 24px rgba(255, 122, 26, 0.30);
-  --brilho_rosa: 0 0 24px rgba(255, 61, 203, 0.40);
-  --gradiente_marca: linear-gradient(90deg, #00E5FF 0%, #14F1C6 35%, #A855F7 75%, #FF7A1A 100%);
-  --grade_fundo: linear-gradient(rgba(138, 155, 184, 0.03) 1px, transparent 1px),
-                 linear-gradient(90deg, rgba(138, 155, 184, 0.03) 1px, transparent 1px);
+  /* semântica dos dados (paleta categórica clara da Carbon + alerta) */
+  --cor_receita: #1192e8;          /* Cyan 50 */
+  --cor_total: #6929c4;            /* Purple 70: totais intermediários e orçado */
+  --cor_custo: #ba4e00;            /* Orange 60: custos, despesas e queda */
+  --cor_lucro: #198038;            /* Green 60: lucros e alta */
+  --cor_prejuizo: #da1e28;         /* Red 60 (alerta): exclusivo de prejuízo */
+  --cor_prejuizo_texto: #da1e28;   /* text-error */
 
-  /* tipografia */
-  --fonte_titulo: "Space Grotesk Variable", "Space Grotesk", "Segoe UI", system-ui, sans-serif;
-  --fonte_texto: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;
-  --fonte_numero: "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  /* tipografia (IBM Plex, empacotada com @fontsource) */
+  --fonte_titulo: "IBM Plex Sans Variable", "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --fonte_texto: "IBM Plex Sans Variable", "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --fonte_numero: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
 
-  /* forma */
-  --raio: 14px;
+  /* forma: a Carbon usa cantos retos em tiles, botões e campos */
+  --raio: 0px;
   --espaco: 16px;
 
-  /* movimento */
-  --duracao_curta: 200ms;
-  --duracao_media: 400ms;
+  /* movimento (Carbon productive: 110 a 240 ms) */
+  --duracao_curta: 110ms;
+  --duracao_media: 240ms;
+  --curva_entrada: cubic-bezier(0, 0, 0.38, 0.9);
+}
+
+:root.dark {
+  /* superfícies (g100) */
+  --cor_fundo: #161616;
+  --cor_superficie: #262626;
+  --cor_superficie_2: #393939;
+  --cor_superficie_hover: #333333;
+  --cor_selecionado: #393939;
+  --cor_borda: #393939;
+  --cor_borda_forte: #6f6f6f;
+
+  /* texto */
+  --cor_texto: #f4f4f4;
+  --cor_texto_suave: #c6c6c6;
+  --cor_texto_fraco: #a8a8a8;
+  --cor_texto_inverso: #ffffff;
+
+  /* interação */
+  --cor_interativo: #4589ff;       /* Blue 50 */
+  --cor_foco: #ffffff;
+
+  /* semântica dos dados (paleta categórica escura da Carbon + alerta) */
+  --cor_receita: #33b1ff;          /* Cyan 40 */
+  --cor_total: #8a3ffc;            /* Purple 60 */
+  --cor_custo: #ff832b;            /* Orange 40 */
+  --cor_lucro: #6fdc8c;            /* Green 30 */
+  --cor_prejuizo: #fa4d56;         /* Red 50 */
+  --cor_prejuizo_texto: #ff8389;   /* text-error */
 }

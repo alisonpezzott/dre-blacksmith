@@ -1,13 +1,16 @@
 // Tendência mensal: receita líquida, lucro líquido e margem líquida (eixo secundário).
+// Clicar num mês filtra os demais visuais (Ctrl+clique soma meses).
 
 import { useMemo } from "react";
 import type { QueryTable } from "@microsoft/fabric-app-data";
 import { VegaVisual } from "@microsoft/fabric-visuals";
+import type { InteractionEvent } from "@microsoft/fabric-visuals-core";
 
-import { metadados_tendencia, spec_tendencia } from "@/dados/visuais/tendencia";
+import { metadados_tendencia, montar_spec_tendencia } from "@/dados/visuais/tendencia";
 import { useThemeContext } from "@/hooks/theme.context";
 import { toDataTable } from "@/lib/to-data-table";
-import { config_vega_app, paleta_graficos } from "@/tema/tema_graficos";
+import { capacidades_selecao } from "@/estado/selecao_cruzada";
+import { config_vega, usePaletaGraficos } from "@/tema/tema_graficos";
 import { Cartao, EstadoErro, EstadoCarregando, EstadoVazio } from "./estados_carregamento";
 
 interface GraficoTendenciaProps {
@@ -15,6 +18,11 @@ interface GraficoTendenciaProps {
     carregando: boolean;
     erro: Error | undefined;
     subtitulo: string;
+    /** meses (1 a 12) do filtro da barra; `null` = ano inteiro */
+    intervalo: number[] | null;
+    /** indice_mes da seleção cruzada; `null` = nenhum */
+    selecionados: number[] | null;
+    ao_interagir: (eventos: InteractionEvent[]) => void;
     className?: string;
 }
 
@@ -39,9 +47,21 @@ export function Legenda({ itens }: { itens: { rotulo: string; cor: string; trace
     );
 }
 
-export function GraficoTendencia({ tabela, carregando, erro, subtitulo, className }: GraficoTendenciaProps) {
+export function GraficoTendencia({
+    tabela,
+    carregando,
+    erro,
+    subtitulo,
+    intervalo,
+    selecionados,
+    ao_interagir,
+    className,
+}: GraficoTendenciaProps) {
     const { theme } = useThemeContext();
+    const paleta = usePaletaGraficos();
     const dados = useMemo(() => (tabela ? toDataTable(tabela, metadados_tendencia) : null), [tabela]);
+    const spec = useMemo(() => montar_spec_tendencia(paleta, intervalo, selecionados), [paleta, intervalo, selecionados]);
+    const config = useMemo(() => config_vega(paleta), [paleta]);
 
     let conteudo;
     if (erro) conteudo = <EstadoErro erro={erro} />;
@@ -50,10 +70,12 @@ export function GraficoTendencia({ tabela, carregando, erro, subtitulo, classNam
     else {
         conteudo = (
             <VegaVisual
-                spec={spec_tendencia}
+                spec={spec}
                 data={dados}
                 theme={theme}
-                configVegaLite={config_vega_app}
+                configVegaLite={config}
+                capabilities={capacidades_selecao}
+                onInteraction={ao_interagir}
                 chromeless
                 className="h-full w-full"
             />
@@ -68,15 +90,18 @@ export function GraficoTendencia({ tabela, carregando, erro, subtitulo, classNam
             acoes={
                 <Legenda
                     itens={[
-                        { rotulo: "Receita líquida", cor: paleta_graficos.receita },
-                        { rotulo: "Lucro líquido", cor: paleta_graficos.lucro },
-                        { rotulo: "Margem líquida (eixo direito)", cor: paleta_graficos.total, tracejado: true },
-                        { rotulo: "Prejuízo", cor: paleta_graficos.prejuizo },
+                        { rotulo: "Receita líquida", cor: paleta.receita },
+                        { rotulo: "Lucro líquido", cor: paleta.lucro },
+                        { rotulo: "Margem líquida (eixo direito)", cor: paleta.total, tracejado: true },
+                        { rotulo: "Prejuízo", cor: paleta.prejuizo },
                     ]}
                 />
             }
         >
             <div className="h-72 min-h-0 flex-1">{conteudo}</div>
+            <p className="mt-2 text-200 text-texto-fraco">
+                Clique num mês para filtrar o painel; Ctrl+clique soma meses; clique de novo ou Esc para limpar.
+            </p>
         </Cartao>
     );
 }

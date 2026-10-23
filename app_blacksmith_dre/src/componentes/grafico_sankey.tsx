@@ -1,5 +1,6 @@
 // Sankey da DRE: como a receita vira lucro (ou prejuízo) no recorte filtrado.
 // Os valores dos links vêm prontos da medida sankey_valor; aqui só há layout e desenho.
+// Clicar num nó destaca os fluxos dele (os demais esmaecem) e abre a evolução mensal.
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { sankeyLinkHorizontal, type SankeyLink } from "d3-sankey";
@@ -13,7 +14,7 @@ import {
     type NoSankeyEntrada,
 } from "@/dados/layout_sankey";
 import { cn } from "@/lib/utils";
-import { cor_por_tipo_no, paleta_graficos } from "@/tema/tema_graficos";
+import { cor_por_tipo_no, opacidade_esmaecida, usePaletaGraficos } from "@/tema/tema_graficos";
 import { EstadoErro, EstadoVazio, Esqueleto } from "./estados_carregamento";
 
 const altura_total = 560;
@@ -47,10 +48,6 @@ function caminho(link: LinkLayout): string {
     return gerador_faixa(link as unknown as SankeyLink<object, object>) ?? "";
 }
 
-function cor_no(no: NoSankeyEntrada): string {
-    return no.cor_hex || cor_por_tipo_no[no.tipo_no] || paleta_graficos.total;
-}
-
 /** Posição vertical dos rótulos por coluna, empurrando para baixo os que se sobrepõem. */
 function posicoes_rotulos(nos: NoLayout[]): Map<string, number> {
     const posicoes = new Map<string, number>();
@@ -80,6 +77,8 @@ export function GraficoSankey({
     const [largura_conteiner, definir_largura] = useState(largura_minima);
     const [destaque, definir_destaque] = useState<{ link?: string; no?: string } | null>(null);
     const [dica, definir_dica] = useState<Dica | null>(null);
+    const paleta = usePaletaGraficos();
+    const cor_no = (no: NoSankeyEntrada) => cor_por_tipo_no(paleta, no.tipo_no);
 
     useEffect(() => {
         const elemento = conteiner.current;
@@ -126,10 +125,22 @@ export function GraficoSankey({
         ];
     }
 
+    // o hover tem prioridade; sem hover, vale o nó selecionado (destaque persistente)
+    const foco = destaque ?? (no_selecionado ? { no: no_selecionado } : null);
+
     function ativo(link: LinkLayout): boolean {
-        if (!destaque) return false;
-        if (destaque.link) return destaque.link === link.id;
-        return link.source.cod_no === destaque.no || link.target.cod_no === destaque.no;
+        if (!foco) return false;
+        if (foco.link) return foco.link === link.id;
+        return link.source.cod_no === foco.no || link.target.cod_no === foco.no;
+    }
+
+    function no_em_foco(no: NoLayout): boolean {
+        if (!foco) return true;
+        if (foco.no === no.cod_no) return true;
+        const ligados = foco.link
+            ? layout?.links.filter((l) => l.id === foco.link)
+            : layout?.links.filter((l) => l.source.cod_no === foco.no || l.target.cod_no === foco.no);
+        return (ligados ?? []).some((l) => l.source.cod_no === no.cod_no || l.target.cod_no === no.cod_no);
     }
 
     function teclado_no(evento: KeyboardEvent, no: NoLayout) {
@@ -161,31 +172,19 @@ export function GraficoSankey({
                 }}
             >
                 <defs>
-                    {layout.links.map((link) => (
-                        <linearGradient
-                            key={link.id}
-                            id={`grad_${link.id}`}
-                            gradientUnits="userSpaceOnUse"
-                            x1={link.source.x1}
-                            x2={link.target.x0}
-                            y1={0}
-                            y2={0}
-                        >
-                            <stop offset="0%" stopColor={cor_no(link.source)} />
-                            <stop offset="100%" stopColor={cor_no(link.target)} />
-                        </linearGradient>
-                    ))}
+                    {/* textura listrada: o prejuízo não depende só da cor para ser percebido */}
                     <pattern id="listras_prejuizo" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                        <rect width="8" height="8" fill={paleta_graficos.prejuizo} />
-                        <rect width="3" height="8" fill="#FFFFFF" fillOpacity={0.35} />
+                        <rect width="8" height="8" fill={paleta.prejuizo} />
+                        <rect width="3" height="8" fill={paleta.superficie} fillOpacity={0.45} />
                     </pattern>
                 </defs>
 
                 <g transform={`translate(${margem.esquerda},${margem.topo})`}>
-                    <g key={chave_recorte} style={{ filter: "drop-shadow(0 0 6px rgba(0, 229, 255, 0.22))" }}>
+                    <g key={chave_recorte}>
                         {layout.links.map((link) => {
                             const prejuizo = link.tipo_link === "prejuizo";
-                            const opacidade = ativo(link) ? 0.85 : destaque ? 0.18 : 0.35;
+                            // cor do destino, sem gradiente (Carbon); 0,4 em repouso, 0,85 em foco
+                            const opacidade = ativo(link) ? 0.85 : foco ? 0.12 : 0.4;
                             const titulo = `${link.source.nome_no} → ${link.target.nome_no}`;
                             const ao_entrar = (evento: MouseEvent) => {
                                 definir_destaque({ link: link.id });
@@ -205,7 +204,7 @@ export function GraficoSankey({
                                         d={caminho(link)}
                                         pathLength={1}
                                         fill="none"
-                                        stroke={prejuizo ? paleta_graficos.prejuizo : `url(#grad_${link.id})`}
+                                        stroke={prejuizo ? "url(#listras_prejuizo)" : cor_no(link.target)}
                                         strokeWidth={Math.max(1, link.width)}
                                         strokeOpacity={opacidade}
                                         className="sankey_link sankey_link_entrada"
@@ -215,16 +214,6 @@ export function GraficoSankey({
                                     >
                                         <title>{`${titulo}: ${abreviar_moeda(link.valor)}`}</title>
                                     </path>
-                                    {prejuizo && (
-                                        <path
-                                            d={caminho(link)}
-                                            fill="none"
-                                            stroke="url(#listras_prejuizo)"
-                                            strokeWidth={Math.max(1, link.width)}
-                                            className="sankey_pulso pointer-events-none"
-                                            strokeOpacity={0.55}
-                                        />
-                                    )}
                                 </g>
                             );
                         })}
@@ -257,7 +246,8 @@ export function GraficoSankey({
                                 tabIndex={0}
                                 aria-label={`${descricao}. Abrir evolução mensal`}
                                 aria-pressed={selecionado}
-                                className="cursor-pointer focus:outline-none [&:focus-visible>rect]:stroke-ciano"
+                                className="sankey_no cursor-pointer focus:outline-none [&:focus-visible>rect]:stroke-[var(--cor_foco)]"
+                                opacity={no_em_foco(no) ? 1 : opacidade_esmaecida}
                                 onClick={() => ao_selecionar_no(no)}
                                 onKeyDown={(evento) => teclado_no(evento, no)}
                                 onMouseEnter={ao_entrar}
@@ -268,20 +258,18 @@ export function GraficoSankey({
                                     y={no.y0}
                                     width={no.x1 - no.x0}
                                     height={Math.max(1.5, no.y1 - no.y0)}
-                                    rx={3}
                                     fill={cor}
-                                    stroke={selecionado ? "#FFFFFF" : "transparent"}
+                                    stroke={selecionado ? paleta.texto : "transparent"}
                                     strokeWidth={2}
-                                    style={{ filter: `drop-shadow(0 0 8px ${cor}88)` }}
                                 />
                                 <text
                                     x={no.x1 + 8}
                                     y={y_rotulo + 12}
                                     className="font-base"
                                     fontSize={12}
-                                    fontWeight={600}
-                                    fill={prejuizo ? paleta_graficos.prejuizo : paleta_graficos.texto}
-                                    stroke="#05070F"
+                                    fontWeight={selecionado ? 600 : 400}
+                                    fill={prejuizo ? paleta.prejuizo_texto : paleta.texto}
+                                    stroke={paleta.superficie}
                                     strokeWidth={3}
                                     paintOrder="stroke"
                                 >
@@ -292,8 +280,8 @@ export function GraficoSankey({
                                     y={y_rotulo + 26}
                                     className="numero"
                                     fontSize={11}
-                                    fill={paleta_graficos.texto_suave}
-                                    stroke="#05070F"
+                                    fill={paleta.texto_suave}
+                                    stroke={paleta.superficie}
                                     strokeWidth={3}
                                     paintOrder="stroke"
                                 >
@@ -315,15 +303,15 @@ export function GraficoSankey({
                 <div
                     role="tooltip"
                     className={cn(
-                        "pointer-events-none absolute z-20 min-w-56 rounded-xl border bg-popover p-3 text-200 shadow-28 backdrop-blur-md",
-                        dica.prejuizo ? "border-rosa-neon/60" : "border-input",
+                        "pointer-events-none absolute z-20 min-w-56 border bg-popover p-3 text-200 shadow-28",
+                        dica.prejuizo ? "border-prejuizo" : "border-input",
                     )}
                     style={{
                         left: Math.min(dica.x + 14, largura - 260),
                         top: Math.min(dica.y + 14, altura_total - 140),
                     }}
                 >
-                    <p className={cn("mb-1.5 font-semibold", dica.prejuizo ? "text-rosa-neon" : "text-foreground")}>
+                    <p className={cn("mb-1.5 font-semibold", dica.prejuizo ? "text-prejuizo-texto" : "text-foreground")}>
                         {dica.titulo}
                     </p>
                     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">

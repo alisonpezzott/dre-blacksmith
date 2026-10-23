@@ -1,21 +1,25 @@
 // Fábrica do gráfico de regiões: barras horizontais de receita líquida com a margem
-// líquida em rótulo. As regiões fora do filtro ficam esmaecidas.
+// líquida em rótulo. Fonte da filtragem cruzada por região: as regiões fora do filtro
+// da barra ou fora da seleção ficam esmaecidas.
 
 import type { VisualizationSpec } from "@microsoft/fabric-visuals";
 
 import type { ColumnMetadataMap } from "@/lib/to-data-table";
-import { paleta_graficos } from "@/tema/tema_graficos";
-import { regioes_filtradas } from "../construtor_filtros";
+import { opacidade_esmaecida, paletas, type PaletaGraficos } from "@/tema/tema_graficos";
+import { regioes_filtradas, regioes_selecionadas } from "../construtor_filtros";
 import { conexao_modelo, q_regioes, type ContextoConsulta } from "../consultas_dax";
 import { formatos } from "../formatacao";
 
-export function visual_regioes(ctx: ContextoConsulta) {
-    const selecionadas = regioes_filtradas(ctx.filtros, ctx.dominio);
+export function visual_regioes(ctx: ContextoConsulta, paleta: PaletaGraficos = paletas.escuro) {
     return {
         connection: conexao_modelo,
         query: q_regioes(ctx),
         columnMetadata: metadados_regioes,
-        vegaLiteSpec: montar_spec_regioes(selecionadas),
+        vegaLiteSpec: montar_spec_regioes(
+            paleta,
+            regioes_filtradas(ctx.filtros, ctx.dominio),
+            regioes_selecionadas(ctx.filtros, ctx.dominio),
+        ),
     };
 }
 
@@ -27,11 +31,21 @@ export const metadados_regioes: ColumnMetadataMap = {
     "[lucro_liquido]": { name: "lucro_liquido", displayName: "Lucro líquido", format: formatos.moeda },
 };
 
-/** `selecionadas` = null quando todas as regiões estão no filtro. */
-export function montar_spec_regioes(selecionadas: string[] | null): VisualizationSpec {
-    const no_filtro = selecionadas === null
-        ? "true"
-        : `indexof(${JSON.stringify(selecionadas)}, datum.cod_regiao) >= 0`;
+/** Teste Vega de pertença: `null` = todas as regiões. */
+function contem(regioes: string[] | null): string {
+    return regioes === null ? "true" : `indexof(${JSON.stringify(regioes)}, datum.cod_regiao) >= 0`;
+}
+
+/**
+ * `no_filtro` = regiões do filtro da barra (`null` = todas);
+ * `selecionadas` = regiões clicadas no próprio gráfico (`null` = nenhuma).
+ */
+export function montar_spec_regioes(
+    paleta: PaletaGraficos,
+    no_filtro: string[] | null,
+    selecionadas: string[] | null,
+): VisualizationSpec {
+    const em_destaque = `(${contem(no_filtro)}) && (${contem(selecionadas)})`;
     return {
         $schema: "https://vega.github.io/schema/vega-lite/v6.json",
         width: "container",
@@ -39,6 +53,7 @@ export function montar_spec_regioes(selecionadas: string[] | null): Visualizatio
         encoding: {
             y: { field: "nome_regiao", type: "nominal", sort: "-x", title: null },
             x: { field: "receita_liquida", type: "quantitative", title: null, axis: { tickCount: 4 } },
+            opacity: { condition: { test: em_destaque, value: 1 }, value: opacidade_esmaecida },
             tooltip: [
                 { field: "nome_regiao", type: "nominal" },
                 { field: "receita_liquida", type: "quantitative" },
@@ -48,19 +63,16 @@ export function montar_spec_regioes(selecionadas: string[] | null): Visualizatio
         },
         layer: [
             {
-                mark: { type: "bar", cornerRadiusEnd: 6, height: { band: 0.62 }, color: paleta_graficos.receita },
-                encoding: {
-                    opacity: { condition: { test: no_filtro, value: 0.9 }, value: 0.25 },
-                },
+                mark: { type: "bar", height: { band: 0.6 }, color: paleta.receita, cursor: "pointer" },
             },
             {
-                mark: { type: "text", align: "left", dx: 6, fontWeight: 600 },
+                mark: { type: "text", align: "left", dx: 6, cursor: "pointer" },
                 encoding: {
                     text: { field: "margem_liquida", type: "quantitative" },
-                    // margem negativa = prejuízo na região (rosa neon é exclusivo de prejuízo)
+                    // margem negativa = prejuízo na região (vermelho é exclusivo de prejuízo)
                     color: {
-                        condition: { test: "datum.margem_liquida < 0", value: paleta_graficos.prejuizo },
-                        value: paleta_graficos.lucro,
+                        condition: { test: "datum.margem_liquida < 0", value: paleta.prejuizo_texto },
+                        value: paleta.texto_suave,
                     },
                 },
             },

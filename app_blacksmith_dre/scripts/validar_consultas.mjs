@@ -54,7 +54,10 @@ function conferir(rotulo, obtido, esperado) {
 
 const anos = (await executar(c.q_anos)).map((l) => l.ano).filter((a) => a != null);
 const regioes = (await executar(c.q_regioes_lista)).map((l) => l.cod_regiao).filter(Boolean);
-const dominio = { anos, regioes };
+const calendario = await executar(c.q_calendario);
+const indices_mes = calendario.map((l) => l.indice_mes).filter((i) => i != null);
+const dominio = { anos, regioes, indices_mes };
+conferir("q_calendario meses", indices_mes.length, 36);
 conferir("anos no domínio", anos.join(","), "2024,2025,2026");
 conferir("regiões no domínio", regioes.length, 5);
 
@@ -119,6 +122,27 @@ conferir(
 );
 const todos = await executar(c.q_tendencia(ctx({ ano: null })));
 conferir("q_tendencia todos os anos", todos.length, 36);
+
+// Filtragem cruzada: clicar em mar e abr/2025 na tendência, ou no Sudeste no gráfico de regiões
+const sel_meses = { ano: 2025, selecao: { origem: "tendencia", campo: "indice_mes", valores: [15, 16] } };
+const [kpi_sel] = await executar(c.q_kpis(ctx(sel_meses)));
+const ref_mar_abr = ["2025-03", "2025-04"].reduce((s, m) => s + referencias.resultado_mensal.realizado[m].lucro_liquido, 0);
+conferir("seleção mar+abr/2025 lucro líquido", kpi_sel.lucro_liquido, ref_mar_abr);
+const tendencia_sel = await executar(c.q_tendencia(ctx(sel_meses)));
+conferir("seleção de meses não filtra a própria tendência", tendencia_sel.length, 12);
+const regioes_sel = await executar(c.q_regioes(ctx({ ano: 2025, selecao: { origem: "tendencia", campo: "indice_mes", valores: [16] } })));
+for (const [cod, valor] of Object.entries(referencias.lucro_liquido_por_regiao["2025-04"])) {
+    conferir(`seleção abr/2025 filtra regiões ${cod}`, regioes_sel.find((l) => l.cod_regiao === cod)?.lucro_liquido, valor);
+}
+const links_sel = await executar(c.q_sankey_links(ctx({ ano: 2025, selecao: { origem: "tendencia", campo: "indice_mes", valores: [15] } })));
+for (const [cod_link, valor] of Object.entries(referencias.sankey_realizado["2025-03"].todas)) {
+    conferir(`seleção mar/2025 sankey ${cod_link}`, links_sel.find((l) => `${l.cod_no_origem}__${l.cod_no_destino}` === cod_link)?.valor, valor);
+}
+const sel_sudeste = { ano: 2025, mes_inicio: 4, mes_fim: 4, selecao: { origem: "regioes", campo: "cod_regiao", valores: ["sudeste"] } };
+const [kpi_sudeste] = await executar(c.q_kpis(ctx(sel_sudeste)));
+conferir("seleção Sudeste abr/2025 lucro líquido", kpi_sudeste.lucro_liquido, referencias.lucro_liquido_por_regiao["2025-04"].sudeste);
+const regioes_sudeste = await executar(c.q_regioes(ctx(sel_sudeste)));
+conferir("seleção de regiões não filtra o próprio gráfico", regioes_sudeste.filter((l) => l.cod_regiao).length, 5);
 
 // DRE: contas e subtotais fecham com o lucro líquido
 const dre = await executar(c.q_dre(ctx({ ano: 2024 })));

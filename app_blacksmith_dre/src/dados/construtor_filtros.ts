@@ -13,12 +13,25 @@ export interface EstadoFiltros {
     /** Códigos de região selecionados; vazio = todas. */
     regioes: string[];
     cenario: Cenario;
+    /** Seleção de pontos de dados num visual (filtragem cruzada); ausente = nenhuma. */
+    selecao?: SelecaoCruzada | null;
 }
+
+/**
+ * Filtragem cruzada, como no Power BI: os pontos clicados num visual filtram os demais.
+ * O visual de origem não é filtrado pela própria seleção (só esmaece os demais pontos):
+ * os visuais por mês ignoram a seleção de meses (sem_mes) e o de regiões ignora a de regiões (sem_regiao).
+ */
+export type SelecaoCruzada =
+    | { origem: string; campo: "indice_mes"; valores: number[] }
+    | { origem: string; campo: "cod_regiao"; valores: string[] };
 
 /** Valores válidos, lidos das dimensões do modelo. */
 export interface DominioFiltros {
     anos: number[];
     regioes: string[];
+    /** dim_calendario[indice_mes]: obrigatório para aceitar uma seleção de meses. */
+    indices_mes?: number[];
 }
 
 export interface OpcoesFiltros {
@@ -57,6 +70,36 @@ export function regioes_filtradas(estado: EstadoFiltros, dominio: DominioFiltros
     return unicas;
 }
 
+/** Meses (indice_mes) da seleção cruzada, validados contra o calendário; `null` sem seleção de meses. */
+export function meses_selecionados(estado: EstadoFiltros, dominio: DominioFiltros): number[] | null {
+    const selecao = estado.selecao;
+    if (!selecao || selecao.campo !== "indice_mes" || selecao.valores.length === 0) return null;
+    const invalidos = selecao.valores.filter((i) => !Number.isInteger(i) || !(dominio.indices_mes ?? []).includes(i));
+    if (invalidos.length > 0) {
+        throw new Error(`Mês selecionado fora do domínio: ${invalidos.join(", ")}`);
+    }
+    return [...new Set(selecao.valores)].sort((a, b) => a - b);
+}
+
+/**
+ * Regiões da seleção cruzada, validadas contra o domínio e contidas no filtro de regiões;
+ * `null` sem seleção de regiões.
+ */
+export function regioes_selecionadas(estado: EstadoFiltros, dominio: DominioFiltros): string[] | null {
+    const selecao = estado.selecao;
+    if (!selecao || selecao.campo !== "cod_regiao" || selecao.valores.length === 0) return null;
+    const invalidas = selecao.valores.filter((cod) => !dominio.regioes.includes(cod));
+    if (invalidas.length > 0) {
+        throw new Error(`Região selecionada fora do domínio: ${invalidas.join(", ")}`);
+    }
+    const no_filtro = regioes_filtradas(estado, dominio);
+    const fora = selecao.valores.filter((cod) => no_filtro !== null && !no_filtro.includes(cod));
+    if (fora.length > 0) {
+        throw new Error(`Região selecionada fora do filtro de regiões: ${fora.join(", ")}`);
+    }
+    return dominio.regioes.filter((cod) => selecao.valores.includes(cod));
+}
+
 /** Filtros DAX (um TREATAS por dimensão filtrada) para usar dentro de SUMMARIZECOLUMNS ou CALCULATETABLE. */
 export function montar_filtros(
     estado: EstadoFiltros,
@@ -82,10 +125,13 @@ export function montar_filtros(
     if (!opcoes.sem_mes) {
         const meses = meses_do_intervalo(estado);
         if (meses) filtros.push(`TREATAS ( { ${meses.join(", ")} }, dim_calendario[mes] )`);
+        const selecionados = meses_selecionados(estado, dominio);
+        if (selecionados) filtros.push(`TREATAS ( { ${selecionados.join(", ")} }, dim_calendario[indice_mes] )`);
     }
 
     if (!opcoes.sem_regiao) {
-        const regioes = regioes_filtradas(estado, dominio);
+        // a seleção cruzada fica dentro do filtro de regiões, então a substitui
+        const regioes = regioes_selecionadas(estado, dominio) ?? regioes_filtradas(estado, dominio);
         if (regioes) {
             filtros.push(`TREATAS ( { ${regioes.map(texto_dax).join(", ")} }, dim_regiao[cod_regiao] )`);
         }

@@ -36,14 +36,14 @@ export function PainelOperacional({ linha, carregando, erro, subtitulo, cenario_
                 {indicadores.map(({ campo, rotulo, formato, icone: Icone, nota }) => (
                     <div
                         key={campo}
-                        className="flex flex-col gap-1 rounded-xl border border-border bg-superficie-2/60 p-3 last:col-span-2"
+                        className="flex flex-col gap-1 bg-muted p-3 last:col-span-2"
                     >
                         <dt className="flex items-center gap-1.5 text-200 text-muted-foreground">
-                            <Icone className="icon-size-200 text-ciano" aria-hidden="true" />
+                            <Icone className="icon-size-200" aria-hidden="true" />
                             {rotulo}
                             {nota && <span className="text-texto-fraco">· {nota}</span>}
                         </dt>
-                        <dd className="numero text-500 leading-500 font-semibold text-foreground">
+                        <dd className="font-heading text-500 leading-500 font-light tabular-nums text-foreground">
                             {carregando && !linha ? <Esqueleto className="h-6 w-24" /> : formatar(numero(linha, campo), formato)}
                         </dd>
                     </div>
@@ -55,7 +55,7 @@ export function PainelOperacional({ linha, carregando, erro, subtitulo, cenario_
     return (
         <Cartao titulo="Operação" subtitulo={subtitulo} className={className}>
             {cenario_orcado && (
-                <p className="mb-3 rounded-lg border border-roxo/40 bg-roxo/10 px-3 py-2 text-300 text-foreground">
+                <p className="mb-3 border-l-4 border-interativo bg-muted px-3 py-2 text-300 text-foreground">
                     O orçamento não tem indicadores operacionais: estes números são do realizado.
                 </p>
             )}

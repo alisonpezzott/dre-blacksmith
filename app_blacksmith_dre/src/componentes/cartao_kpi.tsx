@@ -1,13 +1,12 @@
-// Cartão de KPI: valor, variação contra o ano anterior (▲ turquesa / ▼ laranja)
+// Cartão de KPI: valor, variação contra o ano anterior (▲ verde / ▼ laranja)
 // e sparkline dos últimos 12 meses do recorte.
 
-import { useId } from "react";
 import { area, curveMonotoneX, line } from "d3-shape";
 import { scaleLinear } from "d3-scale";
 
 import { formatar, type Formato } from "@/dados/formatacao";
 import { cn } from "@/lib/utils";
-import { paleta_graficos } from "@/tema/tema_graficos";
+import { usePaletaGraficos } from "@/tema/tema_graficos";
 import { Esqueleto } from "./estados_carregamento";
 
 export interface CartaoKpiProps {
@@ -24,7 +23,7 @@ export interface CartaoKpiProps {
 }
 
 function Sparkline({ serie, cor }: { serie: (number | null)[]; cor: string }) {
-    const id = useId().replace(/:/g, "");
+    const paleta = usePaletaGraficos();
     const pontos = serie.map((v, i) => [i, v] as const).filter((p): p is readonly [number, number] => p[1] !== null);
     if (pontos.length < 2) return <div className="h-10" />;
 
@@ -48,18 +47,12 @@ function Sparkline({ serie, cor }: { serie: (number | null)[]; cor: string }) {
 
     return (
         <svg viewBox={`0 0 ${largura} ${altura}`} className="h-10 w-full" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-                <linearGradient id={`spark_${id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={cor} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={cor} stopOpacity={0} />
-                </linearGradient>
-            </defs>
-            {caminho_area && <path d={caminho_area} fill={`url(#spark_${id})`} />}
+            {caminho_area && <path d={caminho_area} fill={cor} fillOpacity={0.12} />}
             {caminho_linha && (
-                <path d={caminho_linha} fill="none" stroke={cor} strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+                <path d={caminho_linha} fill="none" stroke={cor} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
             )}
             {negativos.map(([i, v]) => (
-                <circle key={i} cx={x(i)} cy={y(v)} r={2.2} fill={paleta_graficos.prejuizo} />
+                <circle key={i} cx={x(i)} cy={y(v)} r={2.2} fill={paleta.prejuizo} />
             ))}
         </svg>
     );
@@ -83,16 +76,16 @@ export function CartaoKpi({
     return (
         <article
             className={cn(
-                "cartao_vidro flex min-w-0 flex-col gap-2 p-4",
-                prejuizo && "border-rosa-neon/60 shadow-brilho-rosa",
+                "cartao flex min-w-0 flex-col gap-2 p-4",
+                prejuizo && "border-prejuizo",
             )}
             aria-busy={carregando}
         >
             <header className="flex items-center justify-between gap-2">
-                <h3 className="truncate text-200 font-medium uppercase tracking-wider text-muted-foreground">{titulo}</h3>
+                <h3 className="truncate text-200 text-muted-foreground">{titulo}</h3>
                 {prejuizo && (
-                    <span className="rounded-md bg-rosa-neon px-1.5 py-0.5 text-100 font-bold tracking-wider text-background">
-                        PREJUÍZO
+                    <span className="rounded-full bg-prejuizo px-2 py-0.5 text-100 text-texto-inverso">
+                        Prejuízo
                     </span>
                 )}
             </header>
@@ -107,8 +100,8 @@ export function CartaoKpi({
                 <>
                     <p
                         className={cn(
-                            "numero truncate text-hero-700 leading-hero-700 font-semibold",
-                            prejuizo ? "text-rosa-neon" : "text-foreground",
+                            "truncate font-heading text-hero-700 leading-hero-700 font-light tabular-nums",
+                            prejuizo ? "text-prejuizo-texto" : "text-foreground",
                         )}
                         title={formatar(valor, formato)}
                     >
@@ -120,7 +113,7 @@ export function CartaoKpi({
                         ) : (
                             <>
                                 <span
-                                    className={cn("numero font-semibold", alta && "text-turquesa", queda && "text-laranja")}
+                                    className={cn("numero", alta && "text-lucro", queda && "text-custo")}
                                 >
                                     {alta ? "▲" : queda ? "▼" : "■"} {formatar(variacao, formato_variacao)}
                                 </span>
