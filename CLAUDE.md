@@ -647,10 +647,10 @@ Regras: verificar o `status` de cada resposta antes de passar colunas e linhas a
 - [x] Trocar o cenário para orçado atualiza todos os visuais.
 - [x] Estados de loading, vazio e erro testados.
 - [x] Layout ok em 1440 px, 1024 px e 390 px.
-- [ ] Abre no tema escuro; o botão do cabeçalho troca para o claro (e volta) em todos os visuais, inclusive Sankey, Vega e data grid, e a escolha persiste ao recarregar.
-- [ ] Contraste AA nos dois temas (texto ≥ 4,5:1; marcas de gráfico ≥ 3:1).
-- [ ] Filtragem cruzada: em 2025, clicar em mar/2025 na tendência mostra o prejuízo de R$ 2,59 mi nos KPIs e o nó de prejuízo no Sankey; Ctrl+clique em abr/2025 soma os dois meses; clicar no Sudeste com abr/2025 selecionado na barra mostra prejuízo; Esc limpa.
-- [ ] O visual de origem não se filtra (só esmaece) e a seleção some ao mudar um filtro da barra ou ao selecionar em outro visual.
+- [x] Abre no tema escuro; o botão do cabeçalho troca para o claro (e volta) em todos os visuais, inclusive Sankey, Vega e data grid, e a escolha persiste ao recarregar.
+- [x] Contraste AA nos dois temas (texto ≥ 4,5:1; marcas de gráfico ≥ 3:1).
+- [x] Filtragem cruzada: em 2025, clicar em mar/2025 na tendência mostra o prejuízo de R$ 2,59 mi nos KPIs e o nó de prejuízo no Sankey; Ctrl+clique em abr/2025 soma os dois meses; clicar no Sudeste com abr/2025 selecionado na barra mostra prejuízo; Esc limpa.
+- [x] O visual de origem não se filtra (só esmaece) e a seleção some ao mudar um filtro da barra ou ao selecionar em outro visual.
 - [x] `npm run validar:consultas` sem falhas (inclui os recortes de filtragem cruzada).
 
 ---
