@@ -56,6 +56,16 @@ const dica = [
 
 const so_prejuizo = [{ filter: "datum.lucro_liquido < 0" }];
 
+/**
+ * Eixo esquerdo de uma camada interna. O `title: null` precisa estar em cada camada:
+ * o VegaVisual copia o `displayName` da coluna para todo canal sem `title`, camada a
+ * camada, e o título concatenado ("Receita líquida, Lucro líquido, …"), girado, fica
+ * mais alto que o contêiner e zera a altura da área de plotagem.
+ */
+function y_esquerdo(campo: "receita_liquida" | "lucro_liquido") {
+    return { field: campo, title: null };
+}
+
 /** Teste Vega: o mês (1 a 12) do ponto está na lista. */
 function mes_em(meses: number[]): string {
     return `indexof(${JSON.stringify(meses)}, ((datum.indice_mes - 1) % 12) + 1) >= 0`;
@@ -105,21 +115,21 @@ export function montar_spec_tendencia(
                             fillOpacity: 0.16,
                             line: { color: paleta.receita, strokeWidth: 1.5 },
                         },
-                        encoding: { y: { field: "receita_liquida" } },
+                        encoding: { y: y_esquerdo("receita_liquida") },
                     },
                     {
                         mark: { type: "line", interpolate: "monotone", color: paleta.lucro, strokeWidth: 2 },
-                        encoding: { y: { field: "lucro_liquido" } },
+                        encoding: { y: y_esquerdo("lucro_liquido") },
                     },
                     {
                         transform: so_selecionados,
                         mark: { type: "point", filled: true, size: 48, color: paleta.receita },
-                        encoding: { y: { field: "receita_liquida" } },
+                        encoding: { y: y_esquerdo("receita_liquida") },
                     },
                     {
                         transform: so_selecionados,
                         mark: { type: "point", filled: true, size: 48, color: paleta.lucro },
-                        encoding: { y: { field: "lucro_liquido" } },
+                        encoding: { y: y_esquerdo("lucro_liquido") },
                     },
                     {
                         transform: so_prejuizo,
@@ -131,7 +141,7 @@ export function montar_spec_tendencia(
                             stroke: paleta.superficie,
                             strokeWidth: 1.5,
                         },
-                        encoding: { y: { field: "lucro_liquido" } },
+                        encoding: { y: y_esquerdo("lucro_liquido") },
                     },
                     {
                         transform: so_prejuizo,
@@ -142,7 +152,7 @@ export function montar_spec_tendencia(
                             fontSize: 11,
                             color: paleta.prejuizo_texto,
                         },
-                        encoding: { y: { field: "lucro_liquido" } },
+                        encoding: { y: y_esquerdo("lucro_liquido") },
                     },
                 ],
             },
