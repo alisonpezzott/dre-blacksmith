@@ -1,0 +1,733 @@
+{
+  "fonte": "dataset/*.csv (base fictícia, seed 42)",
+  "contagens_csv": {
+    "dim_calendario": 36,
+    "dim_conta": 19,
+    "dim_regiao": 5,
+    "dim_no_sankey": 30,
+    "dim_link_sankey": 33,
+    "fato_lancamentos": 6484,
+    "fato_operacional": 180
+  },
+  "dre_anual": {
+    "realizado": {
+      "2024": {
+        "receita_bruta": 153265935.72,
+        "deducoes_receita": -17804705.12,
+        "receita_liquida": 135461230.6,
+        "custos": -59581010.08,
+        "lucro_bruto": 75880220.52,
+        "despesas_operacionais": -47302346.76,
+        "ebitda": 28577873.76,
+        "depreciacao_amortizacao": -4395849.1,
+        "ebit": 24182024.66,
+        "resultado_financeiro": -1903099.23,
+        "lair": 22278925.43,
+        "ir_csll": -6396669.95,
+        "lucro_liquido": 15882255.48,
+        "margem_bruta": 0.560162,
+        "margem_ebitda": 0.210967,
+        "margem_liquida": 0.117246
+      },
+      "2025": {
+        "receita_bruta": 175027678.18,
+        "deducoes_receita": -20207996.38,
+        "receita_liquida": 154819681.8,
+        "custos": -66536678.42,
+        "lucro_bruto": 88283003.38,
+        "despesas_operacionais": -61676378.62,
+        "ebitda": 26606624.76,
+        "depreciacao_amortizacao": -4912808.49,
+        "ebit": 21693816.27,
+        "resultado_financeiro": -1962062.67,
+        "lair": 19731753.6,
+        "ir_csll": -6643590.45,
+        "lucro_liquido": 13088163.15,
+        "margem_bruta": 0.570231,
+        "margem_ebitda": 0.171856,
+        "margem_liquida": 0.084538
+      },
+      "2026": {
+        "receita_bruta": 198798380.44,
+        "deducoes_receita": -23081334.74,
+        "receita_liquida": 175717045.7,
+        "custos": -72314048.42,
+        "lucro_bruto": 103402997.28,
+        "despesas_operacionais": -61072870.82,
+        "ebitda": 42330126.46,
+        "depreciacao_amortizacao": -5556907.21,
+        "ebit": 36773219.25,
+        "resultado_financeiro": -2418180.55,
+        "lair": 34355038.7,
+        "ir_csll": -9794720.48,
+        "lucro_liquido": 24560318.22,
+        "margem_bruta": 0.588463,
+        "margem_ebitda": 0.240899,
+        "margem_liquida": 0.139772
+      }
+    },
+    "orcado": {
+      "2024": {
+        "receita_bruta": 154475737.12,
+        "deducoes_receita": -17844472.27,
+        "receita_liquida": 136631264.85,
+        "custos": -59825410.52,
+        "lucro_bruto": 76805854.33,
+        "despesas_operacionais": -47517607.38,
+        "ebitda": 29288246.95,
+        "depreciacao_amortizacao": -4463199.21,
+        "ebit": 24825047.74,
+        "resultado_financeiro": -1924037.25,
+        "lair": 22901010.49,
+        "ir_csll": -6567413.44,
+        "lucro_liquido": 16333597.05,
+        "margem_bruta": 0.56214,
+        "margem_ebitda": 0.21436,
+        "margem_liquida": 0.119545
+      },
+      "2025": {
+        "receita_bruta": 176334244.06,
+        "deducoes_receita": -20450430.02,
+        "receita_liquida": 155883814.04,
+        "custos": -66767916.28,
+        "lucro_bruto": 89115897.76,
+        "despesas_operacionais": -54193577.84,
+        "ebitda": 34922319.92,
+        "depreciacao_amortizacao": -5084954.49,
+        "ebit": 29837365.43,
+        "resultado_financeiro": -2200620.1,
+        "lair": 27636745.33,
+        "ir_csll": -7886815.54,
+        "lucro_liquido": 19749929.79,
+        "margem_bruta": 0.571682,
+        "margem_ebitda": 0.224028,
+        "margem_liquida": 0.126696
+      },
+      "2026": {
+        "receita_bruta": 203447489.52,
+        "deducoes_receita": -23656804.64,
+        "receita_liquida": 179790684.88,
+        "custos": -74111493.53,
+        "lucro_bruto": 105679191.35,
+        "despesas_operacionais": -62931342.75,
+        "ebitda": 42747848.6,
+        "depreciacao_amortizacao": -5860202.8,
+        "ebit": 36887645.8,
+        "resultado_financeiro": -2544046.78,
+        "lair": 34343599.02,
+        "ir_csll": -9782576.54,
+        "lucro_liquido": 24561022.48,
+        "margem_bruta": 0.58779,
+        "margem_ebitda": 0.237765,
+        "margem_liquida": 0.136609
+      }
+    }
+  },
+  "resultado_mensal": {
+    "realizado": {
+      "2024-01": {
+        "receita_liquida": 9009461.31,
+        "lucro_bruto": 4958435.67,
+        "ebitda": 1858084.34,
+        "lucro_liquido": 1020477.41
+      },
+      "2024-02": {
+        "receita_liquida": 9283197.81,
+        "lucro_bruto": 5121422.24,
+        "ebitda": 1881314.35,
+        "lucro_liquido": 1035377.36
+      },
+      "2024-03": {
+        "receita_liquida": 10737053.89,
+        "lucro_bruto": 5958517.54,
+        "ebitda": 2246230.53,
+        "lucro_liquido": 1260187.48
+      },
+      "2024-04": {
+        "receita_liquida": 10424678.16,
+        "lucro_bruto": 5956027.85,
+        "ebitda": 2289494.42,
+        "lucro_liquido": 1300873.6
+      },
+      "2024-05": {
+        "receita_liquida": 10882853.35,
+        "lucro_bruto": 5944499.12,
+        "ebitda": 2117197.4,
+        "lucro_liquido": 1135859.45
+      },
+      "2024-06": {
+        "receita_liquida": 11320942.93,
+        "lucro_bruto": 6379164.17,
+        "ebitda": 2374327.13,
+        "lucro_liquido": 1314922.46
+      },
+      "2024-07": {
+        "receita_liquida": 10928754.52,
+        "lucro_bruto": 6167382.88,
+        "ebitda": 2420038.69,
+        "lucro_liquido": 1338732.92
+      },
+      "2024-08": {
+        "receita_liquida": 11532774.71,
+        "lucro_bruto": 6478486.02,
+        "ebitda": 2525807.35,
+        "lucro_liquido": 1457909.77
+      },
+      "2024-09": {
+        "receita_liquida": 11648517.49,
+        "lucro_bruto": 6564403.41,
+        "ebitda": 2530378.89,
+        "lucro_liquido": 1440570.01
+      },
+      "2024-10": {
+        "receita_liquida": 12559259.15,
+        "lucro_bruto": 6953491.38,
+        "ebitda": 2401917.87,
+        "lucro_liquido": 1295836.45
+      },
+      "2024-11": {
+        "receita_liquida": 12899749.59,
+        "lucro_bruto": 7353080.15,
+        "ebitda": 2711167.53,
+        "lucro_liquido": 1488656.59
+      },
+      "2024-12": {
+        "receita_liquida": 14233987.69,
+        "lucro_bruto": 8045310.09,
+        "ebitda": 3221915.26,
+        "lucro_liquido": 1792851.98
+      },
+      "2025-01": {
+        "receita_liquida": 10209895.39,
+        "lucro_bruto": 5692059.57,
+        "ebitda": 2161500.04,
+        "lucro_liquido": 1241733.5
+      },
+      "2025-02": {
+        "receita_liquida": 10571899.94,
+        "lucro_bruto": 5995373.34,
+        "ebitda": 2382525.9,
+        "lucro_liquido": 1348899.77
+      },
+      "2025-03": {
+        "receita_liquida": 12272536.64,
+        "lucro_bruto": 6950765.57,
+        "ebitda": -2071798.75,
+        "lucro_liquido": -2594767.27
+      },
+      "2025-04": {
+        "receita_liquida": 11802373.36,
+        "lucro_bruto": 6766745.4,
+        "ebitda": 20950.98,
+        "lucro_liquido": -612261.0
+      },
+      "2025-05": {
+        "receita_liquida": 12693320.64,
+        "lucro_bruto": 7238775.73,
+        "ebitda": 2820333.31,
+        "lucro_liquido": 1597035.16
+      },
+      "2025-06": {
+        "receita_liquida": 13125193.97,
+        "lucro_bruto": 7499357.34,
+        "ebitda": 2827633.29,
+        "lucro_liquido": 1619666.01
+      },
+      "2025-07": {
+        "receita_liquida": 12482834.6,
+        "lucro_bruto": 6939707.17,
+        "ebitda": 2587171.01,
+        "lucro_liquido": 1468030.44
+      },
+      "2025-08": {
+        "receita_liquida": 12772896.93,
+        "lucro_bruto": 7152884.0,
+        "ebitda": 2594709.14,
+        "lucro_liquido": 1461230.16
+      },
+      "2025-09": {
+        "receita_liquida": 13216479.65,
+        "lucro_bruto": 7762033.79,
+        "ebitda": 3158207.72,
+        "lucro_liquido": 1803308.58
+      },
+      "2025-10": {
+        "receita_liquida": 14228976.95,
+        "lucro_bruto": 8105857.8,
+        "ebitda": 3165126.96,
+        "lucro_liquido": 1785739.84
+      },
+      "2025-11": {
+        "receita_liquida": 14985407.88,
+        "lucro_bruto": 8626803.72,
+        "ebitda": 3101626.18,
+        "lucro_liquido": 1746595.48
+      },
+      "2025-12": {
+        "receita_liquida": 16457865.85,
+        "lucro_bruto": 9552639.95,
+        "ebitda": 3858638.98,
+        "lucro_liquido": 2222952.48
+      },
+      "2026-01": {
+        "receita_liquida": 12054592.17,
+        "lucro_bruto": 7104503.45,
+        "ebitda": 2854379.19,
+        "lucro_liquido": 1622043.34
+      },
+      "2026-02": {
+        "receita_liquida": 12155902.79,
+        "lucro_bruto": 7102679.01,
+        "ebitda": 2878144.62,
+        "lucro_liquido": 1691040.82
+      },
+      "2026-03": {
+        "receita_liquida": 13832156.88,
+        "lucro_bruto": 8049617.93,
+        "ebitda": 3216356.01,
+        "lucro_liquido": 1818350.43
+      },
+      "2026-04": {
+        "receita_liquida": 13185663.03,
+        "lucro_bruto": 7707694.04,
+        "ebitda": 3337831.27,
+        "lucro_liquido": 1969325.98
+      },
+      "2026-05": {
+        "receita_liquida": 14516251.71,
+        "lucro_bruto": 8410164.95,
+        "ebitda": 3337282.63,
+        "lucro_liquido": 1905410.55
+      },
+      "2026-06": {
+        "receita_liquida": 15107900.42,
+        "lucro_bruto": 8888149.46,
+        "ebitda": 3495683.19,
+        "lucro_liquido": 1948049.74
+      },
+      "2026-07": {
+        "receita_liquida": 14241947.61,
+        "lucro_bruto": 8420971.61,
+        "ebitda": 3678608.42,
+        "lucro_liquido": 2160367.38
+      },
+      "2026-08": {
+        "receita_liquida": 14583237.42,
+        "lucro_bruto": 8550157.05,
+        "ebitda": 3592525.52,
+        "lucro_liquido": 2104935.74
+      },
+      "2026-09": {
+        "receita_liquida": 15540854.69,
+        "lucro_bruto": 9230334.15,
+        "ebitda": 4031558.37,
+        "lucro_liquido": 2371198.82
+      },
+      "2026-10": {
+        "receita_liquida": 15584009.91,
+        "lucro_bruto": 9388285.12,
+        "ebitda": 3670980.48,
+        "lucro_liquido": 2107686.05
+      },
+      "2026-11": {
+        "receita_liquida": 16482552.2,
+        "lucro_bruto": 9707708.99,
+        "ebitda": 3786601.84,
+        "lucro_liquido": 2232861.03
+      },
+      "2026-12": {
+        "receita_liquida": 18431976.87,
+        "lucro_bruto": 10842731.52,
+        "ebitda": 4450174.92,
+        "lucro_liquido": 2629048.34
+      }
+    },
+    "orcado": {
+      "2024-01": {
+        "receita_liquida": 9175978.77,
+        "lucro_bruto": 5128087.65,
+        "ebitda": 1960227.44,
+        "lucro_liquido": 1077667.66
+      },
+      "2024-02": {
+        "receita_liquida": 9444027.14,
+        "lucro_bruto": 5246307.61,
+        "ebitda": 2053490.08,
+        "lucro_liquido": 1182676.59
+      },
+      "2024-03": {
+        "receita_liquida": 10724467.85,
+        "lucro_bruto": 6049203.93,
+        "ebitda": 2298017.59,
+        "lucro_liquido": 1295426.63
+      },
+      "2024-04": {
+        "receita_liquida": 10428969.59,
+        "lucro_bruto": 5908175.64,
+        "ebitda": 2357066.59,
+        "lucro_liquido": 1330358.4
+      },
+      "2024-05": {
+        "receita_liquida": 11042267.67,
+        "lucro_bruto": 6164601.61,
+        "ebitda": 2295146.32,
+        "lucro_liquido": 1283356.46
+      },
+      "2024-06": {
+        "receita_liquida": 11611901.9,
+        "lucro_bruto": 6564158.19,
+        "ebitda": 2665938.02,
+        "lucro_liquido": 1535087.16
+      },
+      "2024-07": {
+        "receita_liquida": 11002929.38,
+        "lucro_bruto": 6218458.38,
+        "ebitda": 2410283.17,
+        "lucro_liquido": 1322697.14
+      },
+      "2024-08": {
+        "receita_liquida": 11299092.77,
+        "lucro_bruto": 6252855.53,
+        "ebitda": 2387094.43,
+        "lucro_liquido": 1330672.38
+      },
+      "2024-09": {
+        "receita_liquida": 12060171.49,
+        "lucro_bruto": 6861035.53,
+        "ebitda": 2725944.3,
+        "lucro_liquido": 1507935.11
+      },
+      "2024-10": {
+        "receita_liquida": 12420690.71,
+        "lucro_bruto": 6938392.53,
+        "ebitda": 2449100.75,
+        "lucro_liquido": 1315205.94
+      },
+      "2024-11": {
+        "receita_liquida": 12885909.85,
+        "lucro_bruto": 7232048.17,
+        "ebitda": 2482555.61,
+        "lucro_liquido": 1363473.48
+      },
+      "2024-12": {
+        "receita_liquida": 14534857.73,
+        "lucro_bruto": 8242529.56,
+        "ebitda": 3203382.65,
+        "lucro_liquido": 1789040.1
+      },
+      "2025-01": {
+        "receita_liquida": 10324400.36,
+        "lucro_bruto": 5818568.13,
+        "ebitda": 2171585.95,
+        "lucro_liquido": 1247388.02
+      },
+      "2025-02": {
+        "receita_liquida": 10725840.67,
+        "lucro_bruto": 6027517.13,
+        "ebitda": 2299598.78,
+        "lucro_liquido": 1337872.55
+      },
+      "2025-03": {
+        "receita_liquida": 12151844.64,
+        "lucro_bruto": 6876767.04,
+        "ebitda": 2683735.49,
+        "lucro_liquido": 1499650.63
+      },
+      "2025-04": {
+        "receita_liquida": 12050960.64,
+        "lucro_bruto": 6837415.71,
+        "ebitda": 2668700.64,
+        "lucro_liquido": 1526931.89
+      },
+      "2025-05": {
+        "receita_liquida": 12610697.46,
+        "lucro_bruto": 7080965.29,
+        "ebitda": 2823992.75,
+        "lucro_liquido": 1589119.2
+      },
+      "2025-06": {
+        "receita_liquida": 13194831.98,
+        "lucro_bruto": 7455896.41,
+        "ebitda": 2936665.72,
+        "lucro_liquido": 1629290.08
+      },
+      "2025-07": {
+        "receita_liquida": 12447754.23,
+        "lucro_bruto": 7149000.49,
+        "ebitda": 2999836.56,
+        "lucro_liquido": 1716718.38
+      },
+      "2025-08": {
+        "receita_liquida": 13035736.9,
+        "lucro_bruto": 7424827.35,
+        "ebitda": 2935031.23,
+        "lucro_liquido": 1651270.98
+      },
+      "2025-09": {
+        "receita_liquida": 13732086.37,
+        "lucro_bruto": 7965152.03,
+        "ebitda": 3233758.14,
+        "lucro_liquido": 1884457.67
+      },
+      "2025-10": {
+        "receita_liquida": 14180521.0,
+        "lucro_bruto": 8216035.3,
+        "ebitda": 3077028.02,
+        "lucro_liquido": 1691106.62
+      },
+      "2025-11": {
+        "receita_liquida": 14789609.05,
+        "lucro_bruto": 8504060.96,
+        "ebitda": 3170058.65,
+        "lucro_liquido": 1751001.72
+      },
+      "2025-12": {
+        "receita_liquida": 16639530.74,
+        "lucro_bruto": 9759691.92,
+        "ebitda": 3922327.99,
+        "lucro_liquido": 2225122.05
+      },
+      "2026-01": {
+        "receita_liquida": 11815744.29,
+        "lucro_bruto": 6867342.37,
+        "ebitda": 2890143.0,
+        "lucro_liquido": 1714409.25
+      },
+      "2026-02": {
+        "receita_liquida": 12395713.31,
+        "lucro_bruto": 7311929.52,
+        "ebitda": 3020945.4,
+        "lucro_liquido": 1724858.38
+      },
+      "2026-03": {
+        "receita_liquida": 13859624.72,
+        "lucro_bruto": 8157299.52,
+        "ebitda": 3282469.77,
+        "lucro_liquido": 1837216.69
+      },
+      "2026-04": {
+        "receita_liquida": 13800647.21,
+        "lucro_bruto": 7937933.15,
+        "ebitda": 3174546.96,
+        "lucro_liquido": 1820504.75
+      },
+      "2026-05": {
+        "receita_liquida": 14530985.1,
+        "lucro_bruto": 8457888.57,
+        "ebitda": 3345292.88,
+        "lucro_liquido": 1920253.98
+      },
+      "2026-06": {
+        "receita_liquida": 15248159.16,
+        "lucro_bruto": 8975465.83,
+        "ebitda": 3731400.02,
+        "lucro_liquido": 2141754.43
+      },
+      "2026-07": {
+        "receita_liquida": 14334252.27,
+        "lucro_bruto": 8435069.18,
+        "ebitda": 3375169.79,
+        "lucro_liquido": 1928896.11
+      },
+      "2026-08": {
+        "receita_liquida": 15082629.46,
+        "lucro_bruto": 9034317.14,
+        "ebitda": 3819208.33,
+        "lucro_liquido": 2230009.32
+      },
+      "2026-09": {
+        "receita_liquida": 15894234.01,
+        "lucro_bruto": 9265033.93,
+        "ebitda": 3671676.97,
+        "lucro_liquido": 2105013.09
+      },
+      "2026-10": {
+        "receita_liquida": 16379843.01,
+        "lucro_bruto": 9677583.62,
+        "ebitda": 3912920.05,
+        "lucro_liquido": 2265835.07
+      },
+      "2026-11": {
+        "receita_liquida": 17076561.31,
+        "lucro_bruto": 10128395.64,
+        "ebitda": 3981582.88,
+        "lucro_liquido": 2288342.4
+      },
+      "2026-12": {
+        "receita_liquida": 19372291.03,
+        "lucro_bruto": 11430932.88,
+        "ebitda": 4542492.55,
+        "lucro_liquido": 2583929.01
+      }
+    }
+  },
+  "meses_com_prejuizo": {
+    "realizado": [
+      "2025-03",
+      "2025-04"
+    ],
+    "orcado": []
+  },
+  "lucro_liquido_por_regiao": {
+    "2025-04": {
+      "sudeste": -865507.86,
+      "sul": 139717.95,
+      "nordeste": 29400.45,
+      "centro_oeste": 44182.72,
+      "norte": 39945.74
+    }
+  },
+  "sankey_realizado": {
+    "2025-03": {
+      "todas": {
+        "hardware__receita_bruta": 3441866.74,
+        "licencas_de_software__receita_bruta": 2738624.25,
+        "cloud_assinaturas__receita_bruta": 4454936.32,
+        "consultoria__receita_bruta": 1906601.2,
+        "suporte_manutencao__receita_bruta": 1298117.26,
+        "receita_bruta__deducoes_da_receita": 1567609.13,
+        "receita_bruta__receita_liquida": 12272536.64,
+        "deducoes_da_receita__impostos_sobre_vendas": 1392270.34,
+        "deducoes_da_receita__devolucoes_abatimentos": 175338.79,
+        "receita_liquida__custos_cpv_csp": 5321771.07,
+        "receita_liquida__lucro_bruto": 6950765.57,
+        "custos_cpv_csp__custo_de_hardware": 2125058.41,
+        "custos_cpv_csp__infraestrutura_cloud": 1206700.23,
+        "custos_cpv_csp__equipe_de_servicos": 1756314.23,
+        "custos_cpv_csp__royalties_licencas_de_terceiros": 233698.2,
+        "lucro_bruto__despesas_operacionais": 6950765.57,
+        "prejuizo_liquido__despesas_operacionais": 2071798.75,
+        "despesas_operacionais__pesquisa_desenvolvimento": 1692301.06,
+        "despesas_operacionais__vendas_marketing": 1383285.98,
+        "despesas_operacionais__pessoal_administrativo": 654332.35,
+        "despesas_operacionais__gerais_administrativas": 492644.93,
+        "despesas_operacionais__despesas_nao_recorrentes": 4800000.0,
+        "prejuizo_liquido__depreciacao_amortizacao": 388600.04,
+        "prejuizo_liquido__resultado_financeiro_liquido": 134368.48
+      }
+    },
+    "2025-04": {
+      "todas": {
+        "hardware__receita_bruta": 3260601.55,
+        "licencas_de_software__receita_bruta": 2780660.27,
+        "cloud_assinaturas__receita_bruta": 4311954.59,
+        "consultoria__receita_bruta": 1753599.15,
+        "suporte_manutencao__receita_bruta": 1240293.07,
+        "receita_bruta__deducoes_da_receita": 1544735.27,
+        "receita_bruta__receita_liquida": 11802373.36,
+        "deducoes_da_receita__impostos_sobre_vendas": 1398906.15,
+        "deducoes_da_receita__devolucoes_abatimentos": 145829.12,
+        "receita_liquida__custos_cpv_csp": 5035627.96,
+        "receita_liquida__lucro_bruto": 6766745.4,
+        "custos_cpv_csp__custo_de_hardware": 2011004.41,
+        "custos_cpv_csp__infraestrutura_cloud": 1168014.71,
+        "custos_cpv_csp__equipe_de_servicos": 1626451.34,
+        "custos_cpv_csp__royalties_licencas_de_terceiros": 230157.5,
+        "lucro_bruto__despesas_operacionais": 6745794.42,
+        "lucro_bruto__ebitda": 20950.98,
+        "despesas_operacionais__pesquisa_desenvolvimento": 1640798.63,
+        "despesas_operacionais__vendas_marketing": 1379846.87,
+        "despesas_operacionais__pessoal_administrativo": 680598.76,
+        "despesas_operacionais__gerais_administrativas": 444550.16,
+        "despesas_operacionais__despesas_nao_recorrentes": 2600000.0,
+        "ebitda__depreciacao_amortizacao": 20950.98,
+        "prejuizo_liquido__depreciacao_amortizacao": 345079.38,
+        "prejuizo_liquido__resultado_financeiro_liquido": 165351.45,
+        "prejuizo_liquido__ir_csll": 101830.17
+      },
+      "sudeste": {
+        "hardware__receita_bruta": 1520583.22,
+        "licencas_de_software__receita_bruta": 1342872.84,
+        "cloud_assinaturas__receita_bruta": 1959363.12,
+        "consultoria__receita_bruta": 856917.58,
+        "suporte_manutencao__receita_bruta": 598861.99,
+        "receita_bruta__deducoes_da_receita": 742114.64,
+        "receita_bruta__receita_liquida": 5536484.11,
+        "deducoes_da_receita__impostos_sobre_vendas": 664093.26,
+        "deducoes_da_receita__devolucoes_abatimentos": 78021.38,
+        "receita_liquida__custos_cpv_csp": 2356286.43,
+        "receita_liquida__lucro_bruto": 3180197.68,
+        "custos_cpv_csp__custo_de_hardware": 926609.17,
+        "custos_cpv_csp__infraestrutura_cloud": 502115.7,
+        "custos_cpv_csp__equipe_de_servicos": 815216.06,
+        "custos_cpv_csp__royalties_licencas_de_terceiros": 112345.5,
+        "lucro_bruto__despesas_operacionais": 3180197.68,
+        "prejuizo_liquido__despesas_operacionais": 606608.64,
+        "despesas_operacionais__pesquisa_desenvolvimento": 800211.4,
+        "despesas_operacionais__vendas_marketing": 640790.02,
+        "despesas_operacionais__pessoal_administrativo": 331936.88,
+        "despesas_operacionais__gerais_administrativas": 193868.02,
+        "despesas_operacionais__despesas_nao_recorrentes": 1820000.0,
+        "prejuizo_liquido__depreciacao_amortizacao": 161976.13,
+        "prejuizo_liquido__resultado_financeiro_liquido": 96923.09
+      },
+      "sul": {
+        "hardware__receita_bruta": 590952.94,
+        "licencas_de_software__receita_bruta": 518938.32,
+        "cloud_assinaturas__receita_bruta": 831738.16,
+        "consultoria__receita_bruta": 298195.06,
+        "suporte_manutencao__receita_bruta": 201014.08,
+        "receita_bruta__deducoes_da_receita": 286819.8,
+        "receita_bruta__receita_liquida": 2154018.76,
+        "deducoes_da_receita__impostos_sobre_vendas": 263962.07,
+        "deducoes_da_receita__devolucoes_abatimentos": 22857.73,
+        "receita_liquida__custos_cpv_csp": 898400.52,
+        "receita_liquida__lucro_bruto": 1255618.24,
+        "custos_cpv_csp__custo_de_hardware": 365923.77,
+        "custos_cpv_csp__infraestrutura_cloud": 225835.11,
+        "custos_cpv_csp__equipe_de_servicos": 265694.26,
+        "custos_cpv_csp__royalties_licencas_de_terceiros": 40947.38,
+        "lucro_bruto__despesas_operacionais": 969431.3,
+        "lucro_bruto__ebitda": 286186.94,
+        "despesas_operacionais__pesquisa_desenvolvimento": 271452.04,
+        "despesas_operacionais__vendas_marketing": 242184.79,
+        "despesas_operacionais__pessoal_administrativo": 113149.6,
+        "despesas_operacionais__gerais_administrativas": 82644.87,
+        "despesas_operacionais__despesas_nao_recorrentes": 260000.0,
+        "ebitda__depreciacao_amortizacao": 64386.19,
+        "ebitda__ebit_lucro_operacional": 221800.75,
+        "ebit_lucro_operacional__resultado_financeiro_liquido": 24640.68,
+        "ebit_lucro_operacional__lair": 197160.07,
+        "lair__ir_csll": 57442.12,
+        "lair__lucro_liquido": 139717.95
+      }
+    },
+    "2025": {
+      "todas": {
+        "hardware__receita_bruta": 41881358.77,
+        "licencas_de_software__receita_bruta": 35635208.98,
+        "cloud_assinaturas__receita_bruta": 59297910.0,
+        "consultoria__receita_bruta": 22005547.95,
+        "suporte_manutencao__receita_bruta": 16207652.48,
+        "receita_bruta__deducoes_da_receita": 20207996.38,
+        "receita_bruta__receita_liquida": 154819681.8,
+        "deducoes_da_receita__impostos_sobre_vendas": 17790681.42,
+        "deducoes_da_receita__devolucoes_abatimentos": 2417314.96,
+        "receita_liquida__custos_cpv_csp": 66536678.42,
+        "receita_liquida__lucro_bruto": 88283003.38,
+        "custos_cpv_csp__custo_de_hardware": 26366528.24,
+        "custos_cpv_csp__infraestrutura_cloud": 16722017.29,
+        "custos_cpv_csp__equipe_de_servicos": 20385872.09,
+        "custos_cpv_csp__royalties_licencas_de_terceiros": 3062260.8,
+        "lucro_bruto__despesas_operacionais": 61676378.62,
+        "lucro_bruto__ebitda": 26606624.76,
+        "despesas_operacionais__pesquisa_desenvolvimento": 21078790.3,
+        "despesas_operacionais__vendas_marketing": 18547374.55,
+        "despesas_operacionais__pessoal_administrativo": 8444211.75,
+        "despesas_operacionais__gerais_administrativas": 6206002.02,
+        "despesas_operacionais__despesas_nao_recorrentes": 7400000.0,
+        "ebitda__depreciacao_amortizacao": 4912808.49,
+        "ebitda__ebit_lucro_operacional": 21693816.27,
+        "ebit_lucro_operacional__resultado_financeiro_liquido": 1962062.67,
+        "ebit_lucro_operacional__lair": 19731753.6,
+        "lair__ir_csll": 6643590.45,
+        "lair__lucro_liquido": 13088163.15
+      }
+    }
+  },
+  "fechamento_sankey": {
+    "recortes_testados": 468,
+    "recortes_com_falha": 0,
+    "falhas": []
+  }
+}
