@@ -1,0 +1,20 @@
+cod_conta,nome_conta,cod_grupo,nome_grupo,natureza,ordem_dre
+rec_hardware,Hardware,receita_bruta,Receita Bruta,receita,1
+rec_licencas_software,Licenças de Software,receita_bruta,Receita Bruta,receita,2
+rec_cloud_assinaturas,Cloud & Assinaturas,receita_bruta,Receita Bruta,receita,3
+rec_consultoria,Consultoria,receita_bruta,Receita Bruta,receita,4
+rec_suporte_manutencao,Suporte & Manutenção,receita_bruta,Receita Bruta,receita,5
+ded_impostos_vendas,Impostos sobre Vendas,deducoes_da_receita,Deduções da Receita,despesa,6
+ded_devolucoes_abatimentos,Devoluções & Abatimentos,deducoes_da_receita,Deduções da Receita,despesa,7
+cst_hardware,Custo de Hardware,custos_cpv_csp,Custos (CPV/CSP),despesa,8
+cst_infraestrutura_cloud,Infraestrutura Cloud,custos_cpv_csp,Custos (CPV/CSP),despesa,9
+cst_equipe_servicos,Equipe de Serviços,custos_cpv_csp,Custos (CPV/CSP),despesa,10
+cst_royalties_terceiros,Royalties & Licenças de Terceiros,custos_cpv_csp,Custos (CPV/CSP),despesa,11
+opx_pesquisa_desenvolvimento,Pesquisa & Desenvolvimento,despesas_operacionais,Despesas Operacionais,despesa,12
+opx_vendas_marketing,Vendas & Marketing,despesas_operacionais,Despesas Operacionais,despesa,13
+opx_pessoal_administrativo,Pessoal Administrativo,despesas_operacionais,Despesas Operacionais,despesa,14
+opx_gerais_administrativas,Gerais & Administrativas,despesas_operacionais,Despesas Operacionais,despesa,15
+opx_nao_recorrentes,Despesas Não Recorrentes,despesas_operacionais,Despesas Operacionais,despesa,16
+dep_depreciacao_amortizacao,Depreciação & Amortização,depreciacao_amortizacao,Depreciação & Amortização,despesa,17
+fin_resultado_financeiro,Resultado Financeiro Líquido,resultado_financeiro,Resultado Financeiro,despesa,18
+irp_ir_csll,IR & CSLL,impostos_sobre_o_lucro,Impostos sobre o Lucro,despesa,19

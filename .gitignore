@@ -1,0 +1,22 @@
+# Power BI
+*.pbix
+*.pbit
+.pbi/
+localSettings.json
+*.pbip.lock
+cache.abf
+
+# IDs do ambiente Fabric (workspace, itens) — locais, fora do versionamento
+.env
+
+# Python
+__pycache__/
+.venv/
+.ruff_cache/
+.mypy_cache/
+
+# Node (Fase 4)
+node_modules/
+
+# Cache
+.cache/
