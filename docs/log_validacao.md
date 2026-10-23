@@ -78,5 +78,5 @@ Template `dataapp` (Rayfin CLI 1.36.2). A conexão com o `sm_blacksmith_dre` é 
 | 2026-10-23 | `tsc --noEmit` e `npm run build` | sem erros | sem erros | ok |
 | 2026-10-23 | `rayfin up` em `ws_blacksmith_financeiro`, item `app_blacksmith_dre` | publicado e saudável | publicado; `rayfin up status` Reachable | ok |
 | 2026-10-23 | Lint: `use-semantic-model-query.ts` (hook do template, não usado pelo app) e teste `scripts/validate-visual.spec.mjs` do template | — | 1 erro de lint e 1 teste falhando, ambos do template | registrado |
-| — | No portal: KPIs batem com a seção 1, Sankey de mar/2025 e abr/2025, 2025 sem prejuízo, troca para orçado, drill de nó | conforme seção 8.6 | pendente: conferência no portal | pendente |
-| — | Estados de loading, vazio e erro; layout em 1440, 1024 e 390 px | ok | pendente: conferência no portal | pendente |
+| 2026-10-23 | No portal: KPIs batem com a seção 1, Sankey de mar/2025 e abr/2025, 2025 sem prejuízo, troca para orçado, drill de nó | conforme seção 8.6 | conferido no portal pelo dono do projeto | ok |
+| 2026-10-23 | Estados de loading, vazio e erro; layout em 1440, 1024 e 390 px | ok | conferido no portal pelo dono do projeto | ok |
