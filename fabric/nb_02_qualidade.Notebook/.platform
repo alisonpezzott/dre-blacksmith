@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_02_qualidade",
+    "description": "Testes de qualidade das tabelas do lh_blacksmith; falha se algum não passar"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c795366f-d29a-4f42-b830-1e4109ac54a5"
+  }
+}
