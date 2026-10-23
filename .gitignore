@@ -20,3 +20,6 @@ node_modules/
 
 # Cache
 .cache/
+
+# Itens do Fabric com os IDs reais (gerado por fabric/ids_ambiente.py implantar)
+.implantacao/

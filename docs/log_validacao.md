@@ -21,7 +21,7 @@ CSVs em `Files/Raw/blacksmith/` (pasta criada no portal com "R" maiúsculo; o pa
 
 | data | verificação | esperado | obtido | status |
 |---|---|---|---|---|
-| 2026-10-23 | `nb_01_ingestao` via `fab job run` (job 6f1b7e71) | Completed, asserts de contagem ok | Completed | ok |
+| 2026-10-23 | `nb_01_ingestao` via `fab job run` | Completed, asserts de contagem ok | Completed | ok |
 | 2026-10-23 | Tabelas Delta em `dbo` | 8 tabelas | dim_calendario, dim_cenario, dim_conta, dim_link_sankey, dim_no_sankey, dim_regiao, fato_lancamentos, fato_operacional | ok |
 | 2026-10-23 | Contagens (assert no `nb_01`) | 36 / 19 / 5 / 30 / 33 / 6.484 / 180 / 2 | conferidas pelo assert | ok |
 | 2026-10-23 | Tipos (`fab table schema`) | nenhuma coluna numérica ou de data como string | data `date`; ano, mes, indice_mes, ordem_dre, coluna_sankey, etapa, ordem_link, ordem_cenario e contagens `integer`; valor e valor_dre `decimal(18,2)`; churn_pct `double`; data_hora_carga `timestamp` | ok |
@@ -30,7 +30,7 @@ CSVs em `Files/Raw/blacksmith/` (pasta criada no portal com "R" maiúsculo; o pa
 
 | data | verificação | esperado | obtido | status |
 |---|---|---|---|---|
-| 2026-10-23 | `nb_02_qualidade` via `fab job run` (job 11b8eed2) | Completed (`qualidade ok`) | Completed | ok |
+| 2026-10-23 | `nb_02_qualidade` via `fab job run` | Completed (`qualidade ok`) | Completed | ok |
 | 2026-10-23 | Lucro líquido realizado 2024 / 2025 / 2026 (assert) | 15.882.255,48 / 13.088.163,15 / 24.560.318,22 ± R$ 1 | conferido pelo assert | ok |
 | 2026-10-23 | Meses com prejuízo consolidado (assert) | realizado: 2025-03 e 2025-04; orçado: nenhum | conferido pelo assert | ok |
 | 2026-10-23 | Teste 3 corrigido: link folha só para contas de grupos com 2+ contas | nenhuma conta sem link folha | conferido pelo assert | ok |
@@ -60,7 +60,7 @@ Observação para a Fase 4: o Direct Lake acrescenta um membro em branco às dim
 
 | data | verificação | esperado | obtido | status |
 |---|---|---|---|---|
-| 2026-10-23 | `fab job run` do pipeline (job ce175a44): nb_01 → nb_02 → nb_03 | Completed | Completed | ok |
+| 2026-10-23 | `fab job run` do pipeline: nb_01 → nb_02 → nb_03 | Completed | Completed | ok |
 | 2026-10-23 | Revalidação do modelo após o pipeline (`validar_modelo.py`) | 0 falhas | 31 verificações, 0 falhas | ok |
 | 2026-10-23 | `data_ultima_carga` | horário da execução (Brasília) | 23/10/2026 00:25 | ok |
 | 2026-10-23 | Desligar "Keep your Direct Lake data up to date" no modelo | desligado | desligado no portal; reenquadramento só pelo `nb_03` do pipeline | ok |
