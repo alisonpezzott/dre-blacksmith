@@ -6,6 +6,10 @@ Projeto de ponta a ponta no **Microsoft Fabric** que mostra, num gráfico de **S
 
 O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro. Clicar num ponto de um gráfico filtra os outros, como no Power BI.
 
+![App publicado no Fabric: março de 2025 selecionado na tendência mensal. O nó vermelho "Prejuízo Líquido" aparece no Sankey cobrindo despesas, D&A e resultado financeiro, e os KPIs mostram o prejuízo de R$ 2,59 mi.](docs/imagens/app_blacksmith_dre.png)
+
+*Mar/2025 selecionado na tendência: o EBITDA fica negativo e o nó **Prejuízo Líquido** passa a financiar despesas, D&A e resultado financeiro.*
+
 > **Os dados são 100% fictícios.** A Blacksmith é uma empresa inventada, e a base foi gerada com semente fixa (seed 42). Se você adaptar o projeto para dados reais, anonimize-os antes e nunca versione dados de clientes.
 
 ---
@@ -114,6 +118,7 @@ app_blacksmith_dre/              # Fabric App (Vite + React 19 + TypeScript)
   rayfin/rayfin.yml              # configuração do item Rayfin
   fabric.example.yaml            # modelo do fabric.yaml (conexão com o modelo semântico)
 docs/log_validacao.md            # registro das validações de cada fase
+docs/imagens/                    # print do app publicado (usado neste README)
 CLAUDE.md                        # especificação completa do projeto
 .env.example                     # modelo do .env com os IDs do ambiente
 ```
