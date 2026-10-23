@@ -52,7 +52,7 @@ Validação automatizada: `uv run validacao/validar_modelo.py` roda as consultas
 | 2026-10-23 | v05c medidas sem erro por `mes_ano` | 36 meses, 0 erros | 36 meses, 0 erros | ok |
 | 2026-10-23 | v06 abr/2025 por região | só o Sudeste negativo e com links de prejuízo | Sudeste −865.507,86; links de prejuízo só no Sudeste | ok |
 | 2026-10-23 | IDs do workspace, lakehouse e modelo | registrados | em `.env` | ok |
-| — | Compartilhar o modelo (Read + Build) com os usuários do app | — | pendente: aguardando a lista de usuários ou grupo | pendente |
+| 2026-10-23 | Compartilhar o modelo (Read + Build) com os usuários do app | — | adiado: por enquanto ninguém além do dono precisa de acesso | adiado |
 
 Observação para a Fase 4: o Direct Lake acrescenta um membro em branco às dimensões. Consultas que forçam valor (`+ 0`) ou iteram `VALUES` mostram uma linha extra com chave vazia; usar `DISTINCT` ou deixar o `SUMMARIZECOLUMNS` remover os vazios.
 
@@ -63,4 +63,4 @@ Observação para a Fase 4: o Direct Lake acrescenta um membro em branco às dim
 | 2026-10-23 | `fab job run` do pipeline (job ce175a44): nb_01 → nb_02 → nb_03 | Completed | Completed | ok |
 | 2026-10-23 | Revalidação do modelo após o pipeline (`validar_modelo.py`) | 0 falhas | 31 verificações, 0 falhas | ok |
 | 2026-10-23 | `data_ultima_carga` | horário da execução (Brasília) | 23/10/2026 00:25 | ok |
-| — | Desligar "Keep your Direct Lake data up to date" no modelo | — | pendente (passo manual no portal) | pendente |
+| 2026-10-23 | Desligar "Keep your Direct Lake data up to date" no modelo | desligado | desligado no portal; reenquadramento só pelo `nb_03` do pipeline | ok |
