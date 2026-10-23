@@ -1,0 +1,49 @@
+/* Tokens do tema dark high-tech (seção 9.1 do CLAUDE.md).
+   O global.css mapeia os tokens do template (--color-*, --font-*) para estes. */
+
+:root {
+  /* superfícies */
+  --cor_fundo: #05070F;
+  --cor_fundo_gradiente: radial-gradient(1200px 600px at 15% -10%, #0B2A3A 0%, transparent 60%),
+                         radial-gradient(900px 500px at 110% 10%, #2A0F45 0%, transparent 55%),
+                         #05070F;
+  --cor_superficie: #0B1020;
+  --cor_superficie_vidro: rgba(11, 16, 32, 0.85);
+  --cor_superficie_2: #111833;
+  --cor_borda: rgba(0, 229, 255, 0.14);
+  --cor_borda_forte: rgba(0, 229, 255, 0.35);
+
+  /* texto */
+  --cor_texto: #E6F1FF;
+  --cor_texto_suave: #8A9BB8;
+  --cor_texto_fraco: #55627D;
+
+  /* acentos */
+  --cor_ciano: #00E5FF;       /* receitas, foco, links ativos */
+  --cor_turquesa: #14F1C6;    /* lucros, variação positiva */
+  --cor_laranja: #FF7A1A;     /* custos/despesas, variação negativa */
+  --cor_roxo: #A855F7;        /* totais intermediários, orçado */
+  --cor_rosa_neon: #FF3DCB;   /* exclusivo de prejuízo */
+
+  /* efeitos */
+  --brilho_ciano: 0 0 24px rgba(0, 229, 255, 0.35);
+  --brilho_turquesa: 0 0 24px rgba(20, 241, 198, 0.30);
+  --brilho_laranja: 0 0 24px rgba(255, 122, 26, 0.30);
+  --brilho_rosa: 0 0 24px rgba(255, 61, 203, 0.40);
+  --gradiente_marca: linear-gradient(90deg, #00E5FF 0%, #14F1C6 35%, #A855F7 75%, #FF7A1A 100%);
+  --grade_fundo: linear-gradient(rgba(138, 155, 184, 0.03) 1px, transparent 1px),
+                 linear-gradient(90deg, rgba(138, 155, 184, 0.03) 1px, transparent 1px);
+
+  /* tipografia */
+  --fonte_titulo: "Space Grotesk Variable", "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --fonte_texto: "Inter Variable", "Inter", "Segoe UI", system-ui, sans-serif;
+  --fonte_numero: "JetBrains Mono Variable", "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+
+  /* forma */
+  --raio: 14px;
+  --espaco: 16px;
+
+  /* movimento */
+  --duracao_curta: 200ms;
+  --duracao_media: 400ms;
+}

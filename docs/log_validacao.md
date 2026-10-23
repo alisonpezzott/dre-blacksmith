@@ -64,3 +64,19 @@ Observação para a Fase 4: o Direct Lake acrescenta um membro em branco às dim
 | 2026-10-23 | Revalidação do modelo após o pipeline (`validar_modelo.py`) | 0 falhas | 31 verificações, 0 falhas | ok |
 | 2026-10-23 | `data_ultima_carga` | horário da execução (Brasília) | 23/10/2026 00:25 | ok |
 | 2026-10-23 | Desligar "Keep your Direct Lake data up to date" no modelo | desligado | desligado no portal; reenquadramento só pelo `nb_03` do pipeline | ok |
+
+## Fase 4: Fabric App `app_blacksmith_dre`
+
+Template `dataapp` (Rayfin CLI 1.36.2). A conexão com o `sm_blacksmith_dre` é pelo `fabric-app-data` (`fabric.yaml`, fora do git; modelo em `fabric.example.yaml`), não pelo `rayfin connector add` da seção 8.1. Validação local: `npm run validar:consultas` roda as consultas reais do app (`src/dados/consultas_dax.ts`) contra o modelo e compara com `referencias.json`; requer o Azure CLI logado.
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-23 | `validar:consultas`: KPIs 2024/2025/2026 nos dois cenários, links do Sankey (mar/2025, abr/2025, 2025), fechamento dos nós, regiões em abr/2025, tendência, DRE e subtotais | 0 falhas | 149 verificações, 0 falhas | ok |
+| 2026-10-23 | abr/2025 só Sudeste / só Sul (`q_kpis`) | prejuízo / lucro | prejuízo / lucro | ok |
+| 2026-10-23 | `npm run validate:visual` (tendência, regiões, detalhe do nó) | todos renderizam | 6/6 | ok |
+| 2026-10-23 | Testes unitários do app (`vitest run src`) | sem falhas | 48 testes, 0 falhas | ok |
+| 2026-10-23 | `tsc --noEmit` e `npm run build` | sem erros | sem erros | ok |
+| 2026-10-23 | `rayfin up` em `ws_blacksmith_financeiro`, item `app_blacksmith_dre` | publicado e saudável | publicado; `rayfin up status` Reachable | ok |
+| 2026-10-23 | Lint: `use-semantic-model-query.ts` (hook do template, não usado pelo app) e teste `scripts/validate-visual.spec.mjs` do template | — | 1 erro de lint e 1 teste falhando, ambos do template | registrado |
+| — | No portal: KPIs batem com a seção 1, Sankey de mar/2025 e abr/2025, 2025 sem prejuízo, troca para orçado, drill de nó | conforme seção 8.6 | pendente: conferência no portal | pendente |
+| — | Estados de loading, vazio e erro; layout em 1440, 1024 e 390 px | ok | pendente: conferência no portal | pendente |

@@ -1,0 +1,9 @@
+# Copie para fabric.yaml (fora do git) com os IDs de ID_WORKSPACE e ID_MODELO_SEMANTICO do .env:
+#   npx fabric-app-data add semanticModel modelo_dre -w <workspace-id> -i <item-id-sm_blacksmith_dre>
+activeProfile: default
+profiles:
+  default:
+    semanticModels:
+      modelo_dre:
+        workspaceId: <workspace-id>
+        itemId: <item-id-sm_blacksmith_dre>
