@@ -1,0 +1,26 @@
+-- v06a: lucro líquido por região em abr/2025 (realizado)
+-- comparar com referencias.json → lucro_liquido_por_regiao; esperado: só o Sudeste negativo
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_regiao'[cod_regiao],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    TREATAS ( { "2025-04" }, 'dim_calendario'[ano_mes] ),
+    "lucro_liquido", [lucro_liquido],
+    "prejuizo_liquido", [prejuizo_liquido]
+)
+ORDER BY 'dim_regiao'[cod_regiao]
+
+-- v06b: links de prejuízo do Sankey por região em abr/2025
+-- esperado: linhas só do Sudeste (filtrar só o Sul mostra lucro, sem nó de prejuízo)
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_regiao'[cod_regiao],
+    'dim_link_sankey'[cod_link],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    TREATAS ( { "2025-04" }, 'dim_calendario'[ano_mes] ),
+    TREATAS ( { "prejuizo" }, 'dim_link_sankey'[tipo_link] ),
+    "valor", [sankey_valor]
+)
+ORDER BY
+    'dim_regiao'[cod_regiao],
+    'dim_link_sankey'[cod_link]

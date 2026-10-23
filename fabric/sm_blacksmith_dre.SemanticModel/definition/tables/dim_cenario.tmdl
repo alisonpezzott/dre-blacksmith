@@ -1,0 +1,41 @@
+table dim_cenario
+	lineageTag: 322ab262-20b4-417e-bd05-66816ff0592c
+	sourceLineageTag: [dbo].[dim_cenario]
+
+	column cod_cenario
+		isHidden
+		dataType: string
+		lineageTag: f900c2bd-736f-4365-8e64-04526820518a
+		sourceLineageTag: cod_cenario
+		summarizeBy: none
+		sourceColumn: cod_cenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_cenario
+		sortByColumn: ordem_cenario
+		dataType: string
+		lineageTag: 0e917abe-19b9-45f4-a2a6-f504ff89e200
+		sourceLineageTag: nome_cenario
+		summarizeBy: none
+		sourceColumn: nome_cenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column ordem_cenario
+		dataType: int64
+		formatString: 0
+		lineageTag: b0409177-0def-4471-bc0d-012f120b3e8e
+		sourceLineageTag: ordem_cenario
+		summarizeBy: none
+		sourceColumn: ordem_cenario
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_cenario = entity
+		mode: directLake
+		source
+			entityName: dim_cenario
+			schemaName: dbo
+			expressionSource: 'DirectLake - lh_blacksmith'
+

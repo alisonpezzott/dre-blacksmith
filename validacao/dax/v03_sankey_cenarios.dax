@@ -1,0 +1,50 @@
+-- v03: links do Sankey no realizado
+-- comparar com referencias.json → sankey_realizado e com a tabela de cenários da seção 1 do CLAUDE.md
+
+-- v03a: mar/2025, todas as regiões (EBITDA, EBIT, LAIR e lucro líquido não aparecem)
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_link_sankey'[ordem_link],
+    'dim_link_sankey'[cod_link],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    TREATAS ( { "2025-03" }, 'dim_calendario'[ano_mes] ),
+    "valor", [sankey_valor]
+)
+ORDER BY 'dim_link_sankey'[ordem_link]
+
+-- v03b: abr/2025, todas as regiões
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_link_sankey'[ordem_link],
+    'dim_link_sankey'[cod_link],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    TREATAS ( { "2025-04" }, 'dim_calendario'[ano_mes] ),
+    "valor", [sankey_valor]
+)
+ORDER BY 'dim_link_sankey'[ordem_link]
+
+-- v03c: ano de 2025, todas as regiões (sem nó de prejuízo)
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_link_sankey'[ordem_link],
+    'dim_link_sankey'[cod_link],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    TREATAS ( { 2025 }, 'dim_calendario'[ano] ),
+    "valor", [sankey_valor]
+)
+ORDER BY 'dim_link_sankey'[ordem_link]
+
+-- v03d: abr/2025, Sudeste e Sul (só o Sudeste tem links de prejuízo)
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_regiao'[cod_regiao],
+    'dim_link_sankey'[ordem_link],
+    'dim_link_sankey'[cod_link],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    TREATAS ( { "2025-04" }, 'dim_calendario'[ano_mes] ),
+    TREATAS ( { "sudeste", "sul" }, 'dim_regiao'[cod_regiao] ),
+    "valor", [sankey_valor]
+)
+ORDER BY
+    'dim_regiao'[cod_regiao],
+    'dim_link_sankey'[ordem_link]

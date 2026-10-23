@@ -1,0 +1,424 @@
+table _medidas
+
+	measure valor_dre = SUM ( 'fato_lancamentos'[valor_dre] )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure receita_bruta = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "receita_bruta" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure deducoes_receita = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "deducoes_da_receita" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure receita_liquida = [receita_bruta] + [deducoes_receita]
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure custos = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "custos_cpv_csp" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure lucro_bruto = [receita_liquida] + [custos]
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure despesas_operacionais = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "despesas_operacionais" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure ebitda = [lucro_bruto] + [despesas_operacionais]
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure depreciacao_amortizacao = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "depreciacao_amortizacao" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure ebit = [ebitda] + [depreciacao_amortizacao]
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure resultado_financeiro = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "resultado_financeiro" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure lair = [ebit] + [resultado_financeiro]
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure ir_csll = CALCULATE ( [valor_dre], 'dim_conta'[cod_grupo] = "impostos_sobre_o_lucro" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure lucro_liquido = [lair] + [ir_csll]
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 01_dre
+
+	measure margem_bruta = DIVIDE ( [lucro_bruto], [receita_liquida] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure margem_ebitda = DIVIDE ( [ebitda], [receita_liquida] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure margem_ebit = DIVIDE ( [ebit], [receita_liquida] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure margem_liquida = DIVIDE ( [lucro_liquido], [receita_liquida] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure peso_custos = DIVIDE ( - [custos], [receita_liquida] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure peso_despesas_operacionais = DIVIDE ( - [despesas_operacionais], [receita_liquida] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure aliquota_efetiva_ir = DIVIDE ( - [ir_csll], [lair] )
+		formatString: 0.0%
+		displayFolder: 02_margens
+
+	measure receita_liquida_realizado = CALCULATE ( [receita_liquida], 'dim_cenario'[cod_cenario] = "realizado" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure receita_liquida_orcado = CALCULATE ( [receita_liquida], 'dim_cenario'[cod_cenario] = "orcado" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure var_receita_liquida_orcado_pct =
+			DIVIDE (
+			    [receita_liquida_realizado] - [receita_liquida_orcado],
+			    ABS ( [receita_liquida_orcado] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 03_comparativos
+
+	measure lucro_liquido_realizado = CALCULATE ( [lucro_liquido], 'dim_cenario'[cod_cenario] = "realizado" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure lucro_liquido_orcado = CALCULATE ( [lucro_liquido], 'dim_cenario'[cod_cenario] = "orcado" )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure var_lucro_liquido_orcado_pct =
+			DIVIDE (
+			    [lucro_liquido_realizado] - [lucro_liquido_orcado],
+			    ABS ( [lucro_liquido_orcado] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 03_comparativos
+
+	/// Receita líquida dos mesmos meses do ano anterior (indice_mes − 12). Vazia se algum mês do contexto não tem ano anterior no calendário (ex.: filtro "todos os anos").
+	measure receita_liquida_aa =
+			VAR meses = VALUES ( 'dim_calendario'[indice_mes] )
+			VAR meses_aa =
+			    SELECTCOLUMNS ( meses, "indice_mes", 'dim_calendario'[indice_mes] - 12 )
+			VAR meses_cobertos =
+			    COUNTROWS ( INTERSECT ( meses_aa, ALL ( 'dim_calendario'[indice_mes] ) ) )
+			RETURN
+			    IF (
+			        meses_cobertos = COUNTROWS ( meses ),
+			        CALCULATE (
+			            [receita_liquida],
+			            REMOVEFILTERS ( 'dim_calendario' ),
+			            TREATAS ( meses_aa, 'dim_calendario'[indice_mes] )
+			        )
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure var_receita_liquida_aa_pct =
+			DIVIDE (
+			    [receita_liquida] - [receita_liquida_aa],
+			    ABS ( [receita_liquida_aa] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 03_comparativos
+
+	/// Lucro líquido dos mesmos meses do ano anterior; vazio se o período não tem ano anterior completo.
+	measure lucro_liquido_aa =
+			VAR meses = VALUES ( 'dim_calendario'[indice_mes] )
+			VAR meses_aa =
+			    SELECTCOLUMNS ( meses, "indice_mes", 'dim_calendario'[indice_mes] - 12 )
+			VAR meses_cobertos =
+			    COUNTROWS ( INTERSECT ( meses_aa, ALL ( 'dim_calendario'[indice_mes] ) ) )
+			RETURN
+			    IF (
+			        meses_cobertos = COUNTROWS ( meses ),
+			        CALCULATE (
+			            [lucro_liquido],
+			            REMOVEFILTERS ( 'dim_calendario' ),
+			            TREATAS ( meses_aa, 'dim_calendario'[indice_mes] )
+			        )
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure var_lucro_liquido_aa_pct =
+			DIVIDE (
+			    [lucro_liquido] - [lucro_liquido_aa],
+			    ABS ( [lucro_liquido_aa] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 03_comparativos
+
+	/// Lucro bruto dos mesmos meses do ano anterior; vazio se o período não tem ano anterior completo.
+	measure lucro_bruto_aa =
+			VAR meses = VALUES ( 'dim_calendario'[indice_mes] )
+			VAR meses_aa =
+			    SELECTCOLUMNS ( meses, "indice_mes", 'dim_calendario'[indice_mes] - 12 )
+			VAR meses_cobertos =
+			    COUNTROWS ( INTERSECT ( meses_aa, ALL ( 'dim_calendario'[indice_mes] ) ) )
+			RETURN
+			    IF (
+			        meses_cobertos = COUNTROWS ( meses ),
+			        CALCULATE (
+			            [lucro_bruto],
+			            REMOVEFILTERS ( 'dim_calendario' ),
+			            TREATAS ( meses_aa, 'dim_calendario'[indice_mes] )
+			        )
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure var_lucro_bruto_aa_pct =
+			DIVIDE (
+			    [lucro_bruto] - [lucro_bruto_aa],
+			    ABS ( [lucro_bruto_aa] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 03_comparativos
+
+	/// EBITDA dos mesmos meses do ano anterior; vazio se o período não tem ano anterior completo.
+	measure ebitda_aa =
+			VAR meses = VALUES ( 'dim_calendario'[indice_mes] )
+			VAR meses_aa =
+			    SELECTCOLUMNS ( meses, "indice_mes", 'dim_calendario'[indice_mes] - 12 )
+			VAR meses_cobertos =
+			    COUNTROWS ( INTERSECT ( meses_aa, ALL ( 'dim_calendario'[indice_mes] ) ) )
+			RETURN
+			    IF (
+			        meses_cobertos = COUNTROWS ( meses ),
+			        CALCULATE (
+			            [ebitda],
+			            REMOVEFILTERS ( 'dim_calendario' ),
+			            TREATAS ( meses_aa, 'dim_calendario'[indice_mes] )
+			        )
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure var_ebitda_aa_pct =
+			DIVIDE (
+			    [ebitda] - [ebitda_aa],
+			    ABS ( [ebitda_aa] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 03_comparativos
+
+	measure margem_liquida_aa = DIVIDE ( [lucro_liquido_aa], [receita_liquida_aa] )
+		formatString: 0.0%
+		displayFolder: 03_comparativos
+
+	/// Variação da margem líquida contra o ano anterior, em pontos percentuais.
+	measure var_margem_liquida_aa_pp =
+			VAR margem_aa = [margem_liquida_aa]
+			RETURN
+			    IF ( NOT ISBLANK ( margem_aa ), ( [margem_liquida] - margem_aa ) * 100 )
+		formatString: +0.0 \p\.\p\.;-0.0 \p\.\p\.;0.0 \p\.\p\.
+		displayFolder: 03_comparativos
+
+	measure receita_liquida_acumulada_ano =
+			VAR ultimo = MAX ( 'dim_calendario'[indice_mes] )
+			VAR ano = MAX ( 'dim_calendario'[ano] )
+			RETURN
+			    CALCULATE (
+			        [receita_liquida],
+			        REMOVEFILTERS ( 'dim_calendario' ),
+			        'dim_calendario'[ano] = ano,
+			        'dim_calendario'[indice_mes] <= ultimo
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	measure lucro_liquido_acumulado_ano =
+			VAR ultimo = MAX ( 'dim_calendario'[indice_mes] )
+			VAR ano = MAX ( 'dim_calendario'[ano] )
+			RETURN
+			    CALCULATE (
+			        [lucro_liquido],
+			        REMOVEFILTERS ( 'dim_calendario' ),
+			        'dim_calendario'[ano] = ano,
+			        'dim_calendario'[indice_mes] <= ultimo
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 03_comparativos
+
+	/// Semiaditiva: saldo do último mês do contexto.
+	measure clientes_ativos =
+			VAR ultimo = MAX ( 'dim_calendario'[indice_mes] )
+			RETURN
+			    CALCULATE (
+			        SUM ( 'fato_operacional'[clientes_ativos] ),
+			        'dim_calendario'[indice_mes] = ultimo
+			    )
+		formatString: #,##0
+		displayFolder: 04_operacional
+
+	/// Semiaditiva: saldo do último mês do contexto.
+	measure headcount =
+			VAR ultimo = MAX ( 'dim_calendario'[indice_mes] )
+			RETURN
+			    CALCULATE (
+			        SUM ( 'fato_operacional'[headcount] ),
+			        'dim_calendario'[indice_mes] = ultimo
+			    )
+		formatString: #,##0
+		displayFolder: 04_operacional
+
+	measure novos_clientes = SUM ( 'fato_operacional'[novos_clientes] )
+		formatString: #,##0
+		displayFolder: 04_operacional
+
+	measure contratos_fechados = SUM ( 'fato_operacional'[contratos_fechados] )
+		formatString: #,##0
+		displayFolder: 04_operacional
+
+	measure churn_medio_pct =
+			DIVIDE (
+			    SUMX ( 'fato_operacional', 'fato_operacional'[churn_pct] * 'fato_operacional'[clientes_ativos] ),
+			    SUM ( 'fato_operacional'[clientes_ativos] )
+			)
+		formatString: 0.00%
+		displayFolder: 04_operacional
+
+	measure nps_medio =
+			DIVIDE (
+			    SUMX ( 'fato_operacional', 'fato_operacional'[nps] * 'fato_operacional'[clientes_ativos] ),
+			    SUM ( 'fato_operacional'[clientes_ativos] )
+			)
+		formatString: 0
+		displayFolder: 04_operacional
+
+	measure receita_por_cliente = DIVIDE ( [receita_liquida_realizado], [clientes_ativos] )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 04_operacional
+
+	measure receita_por_colaborador = DIVIDE ( [receita_liquida_realizado], [headcount] )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 04_operacional
+
+	/// Valor do link selecionado em dim_link_sankey, calculado sobre os valores já agregados do filtro. A receita líquida paga cada camada de gasto em cascata; a parte não coberta vem do nó prejuizo_liquido.
+	measure sankey_valor =
+			VAR link = SELECTEDVALUE ( 'dim_link_sankey'[cod_link] )
+			VAR conta = SELECTEDVALUE ( 'dim_link_sankey'[cod_conta] )
+			VAR valor_conta =
+			    IF (
+			        conta <> "",
+			        CALCULATE (
+			            SUM ( 'fato_lancamentos'[valor] ),
+			            TREATAS ( { conta }, 'dim_conta'[cod_conta] )
+			        )
+			    )
+			-- gastos de cada camada (positivos)
+			VAR g_custos = - [custos]
+			VAR g_opex = - [despesas_operacionais]
+			VAR g_da = - [depreciacao_amortizacao]
+			VAR g_fin = - [resultado_financeiro]
+			VAR g_ir = - [ir_csll]
+			-- saldo disponível após cada camada (nunca negativo)
+			VAR s0 = [receita_liquida]
+			VAR s1 = MAX ( s0 - g_custos, 0 )
+			VAR s2 = MAX ( s1 - g_opex, 0 )
+			VAR s3 = MAX ( s2 - g_da, 0 )
+			VAR s4 = MAX ( s3 - g_fin, 0 )
+			VAR s5 = MAX ( s4 - g_ir, 0 )
+			VAR resultado =
+			    SWITCH (
+			        link,
+			        "receita_bruta__deducoes_da_receita", - [deducoes_receita],
+			        "receita_bruta__receita_liquida", s0,
+			        "receita_liquida__custos_cpv_csp", MIN ( s0, g_custos ),
+			        "prejuizo_liquido__custos_cpv_csp", g_custos - MIN ( s0, g_custos ),
+			        "receita_liquida__lucro_bruto", s1,
+			        "lucro_bruto__despesas_operacionais", MIN ( s1, g_opex ),
+			        "prejuizo_liquido__despesas_operacionais", g_opex - MIN ( s1, g_opex ),
+			        "lucro_bruto__ebitda", s2,
+			        "ebitda__depreciacao_amortizacao", MIN ( s2, g_da ),
+			        "prejuizo_liquido__depreciacao_amortizacao", g_da - MIN ( s2, g_da ),
+			        "ebitda__ebit_lucro_operacional", s3,
+			        "ebit_lucro_operacional__resultado_financeiro_liquido", MIN ( s3, g_fin ),
+			        "prejuizo_liquido__resultado_financeiro_liquido", g_fin - MIN ( s3, g_fin ),
+			        "ebit_lucro_operacional__lair", s4,
+			        "lair__ir_csll", MIN ( s4, g_ir ),
+			        "prejuizo_liquido__ir_csll", g_ir - MIN ( s4, g_ir ),
+			        "lair__lucro_liquido", s5,
+			        valor_conta
+			    )
+			RETURN
+			    IF ( resultado > 0.005, resultado )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 05_sankey
+
+	/// sankey_valor dos mesmos meses do ano anterior (tooltip do app); vazio se o período não tem ano anterior completo.
+	measure sankey_valor_aa =
+			VAR meses = VALUES ( 'dim_calendario'[indice_mes] )
+			VAR meses_aa =
+			    SELECTCOLUMNS ( meses, "indice_mes", 'dim_calendario'[indice_mes] - 12 )
+			VAR meses_cobertos =
+			    COUNTROWS ( INTERSECT ( meses_aa, ALL ( 'dim_calendario'[indice_mes] ) ) )
+			RETURN
+			    IF (
+			        meses_cobertos = COUNTROWS ( meses ),
+			        CALCULATE (
+			            [sankey_valor],
+			            REMOVEFILTERS ( 'dim_calendario' ),
+			            TREATAS ( meses_aa, 'dim_calendario'[indice_mes] )
+			        )
+			    )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 05_sankey
+
+	measure var_sankey_valor_aa_pct =
+			DIVIDE (
+			    [sankey_valor] - [sankey_valor_aa],
+			    ABS ( [sankey_valor_aa] )
+			)
+		formatString: +0.0%;-0.0%;0.0%
+		displayFolder: 05_sankey
+
+	measure prejuizo_liquido = MAX ( - [lucro_liquido], 0 )
+		formatString: \R\$ #,##0;(\R\$ #,##0);-
+		displayFolder: 05_sankey
+
+	measure meses_com_prejuizo =
+			COUNTROWS (
+			    FILTER ( VALUES ( 'dim_calendario'[indice_mes] ), [lucro_liquido] < 0 )
+			)
+		formatString: #,##0
+		displayFolder: 05_sankey
+
+	/// Momento da última carga do nb_01_ingestao (horário de Brasília), independente dos filtros.
+	measure data_ultima_carga = CALCULATE ( MAX ( 'fato_lancamentos'[data_hora_carga] ), REMOVEFILTERS () )
+		formatString: dd/MM/yyyy HH:mm
+		displayFolder: 06_carga
+
+	column Value
+		dataType: int64
+		isHidden
+		isNameInferred
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: [Value]
+
+	partition _medidas = calculated
+		mode: import
+		source = { 0 }

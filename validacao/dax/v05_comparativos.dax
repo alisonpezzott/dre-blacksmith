@@ -1,0 +1,96 @@
+-- v05a: ano anterior, acumulado e orçado (realizado)
+-- esperado: receita_liquida_aa de 2025 = receita_liquida de 2024; medidas _aa vazias em 2024
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_calendario'[ano],
+    TREATAS ( { "realizado" }, 'dim_cenario'[cod_cenario] ),
+    "receita_liquida", [receita_liquida],
+    "receita_liquida_aa", [receita_liquida_aa],
+    "var_receita_liquida_aa_pct", [var_receita_liquida_aa_pct],
+    "lucro_liquido_aa", [lucro_liquido_aa],
+    "var_lucro_liquido_aa_pct", [var_lucro_liquido_aa_pct],
+    "lucro_bruto_aa", [lucro_bruto_aa],
+    "ebitda_aa", [ebitda_aa],
+    "margem_liquida_aa", [margem_liquida_aa],
+    "var_margem_liquida_aa_pp", [var_margem_liquida_aa_pp],
+    "receita_liquida_acumulada_ano", [receita_liquida_acumulada_ano],
+    "lucro_liquido_acumulado_ano", [lucro_liquido_acumulado_ano],
+    "var_lucro_liquido_orcado_pct", [var_lucro_liquido_orcado_pct]
+)
+ORDER BY 'dim_calendario'[ano]
+
+-- v05b: todos os anos (36 meses no contexto): as medidas _aa devem vir vazias
+EVALUATE
+ROW (
+    "receita_liquida_aa", [receita_liquida_aa],
+    "lucro_liquido_aa", [lucro_liquido_aa],
+    "lucro_bruto_aa", [lucro_bruto_aa],
+    "ebitda_aa", [ebitda_aa],
+    "margem_liquida_aa", [margem_liquida_aa],
+    "var_margem_liquida_aa_pp", [var_margem_liquida_aa_pp]
+)
+
+-- v05c: nenhuma medida retorna erro num visual de tabela por mes_ano
+-- esperado: qtd_meses = 36 e qtd_erros = 0
+-- DISTINCT (e não VALUES) para não contar o membro em branco que o Direct Lake acrescenta às dimensões
+EVALUATE
+ROW (
+    "qtd_meses", COUNTROWS ( DISTINCT ( 'dim_calendario'[mes_ano] ) ),
+    "qtd_erros",
+        SUMX (
+            DISTINCT ( 'dim_calendario'[mes_ano] ),
+            INT ( ISERROR ( [valor_dre] ) )
+                + INT ( ISERROR ( [receita_bruta] ) )
+                + INT ( ISERROR ( [deducoes_receita] ) )
+                + INT ( ISERROR ( [receita_liquida] ) )
+                + INT ( ISERROR ( [custos] ) )
+                + INT ( ISERROR ( [lucro_bruto] ) )
+                + INT ( ISERROR ( [despesas_operacionais] ) )
+                + INT ( ISERROR ( [ebitda] ) )
+                + INT ( ISERROR ( [depreciacao_amortizacao] ) )
+                + INT ( ISERROR ( [ebit] ) )
+                + INT ( ISERROR ( [resultado_financeiro] ) )
+                + INT ( ISERROR ( [lair] ) )
+                + INT ( ISERROR ( [ir_csll] ) )
+                + INT ( ISERROR ( [lucro_liquido] ) )
+                + INT ( ISERROR ( [margem_bruta] ) )
+                + INT ( ISERROR ( [margem_ebitda] ) )
+                + INT ( ISERROR ( [margem_ebit] ) )
+                + INT ( ISERROR ( [margem_liquida] ) )
+                + INT ( ISERROR ( [peso_custos] ) )
+                + INT ( ISERROR ( [peso_despesas_operacionais] ) )
+                + INT ( ISERROR ( [aliquota_efetiva_ir] ) )
+                + INT ( ISERROR ( [receita_liquida_realizado] ) )
+                + INT ( ISERROR ( [receita_liquida_orcado] ) )
+                + INT ( ISERROR ( [var_receita_liquida_orcado_pct] ) )
+                + INT ( ISERROR ( [lucro_liquido_realizado] ) )
+                + INT ( ISERROR ( [lucro_liquido_orcado] ) )
+                + INT ( ISERROR ( [var_lucro_liquido_orcado_pct] ) )
+                + INT ( ISERROR ( [receita_liquida_aa] ) )
+                + INT ( ISERROR ( [var_receita_liquida_aa_pct] ) )
+                + INT ( ISERROR ( [lucro_liquido_aa] ) )
+                + INT ( ISERROR ( [var_lucro_liquido_aa_pct] ) )
+                + INT ( ISERROR ( [lucro_bruto_aa] ) )
+                + INT ( ISERROR ( [var_lucro_bruto_aa_pct] ) )
+                + INT ( ISERROR ( [ebitda_aa] ) )
+                + INT ( ISERROR ( [var_ebitda_aa_pct] ) )
+                + INT ( ISERROR ( [margem_liquida_aa] ) )
+                + INT ( ISERROR ( [var_margem_liquida_aa_pp] ) )
+                + INT ( ISERROR ( [receita_liquida_acumulada_ano] ) )
+                + INT ( ISERROR ( [lucro_liquido_acumulado_ano] ) )
+                + INT ( ISERROR ( [clientes_ativos] ) )
+                + INT ( ISERROR ( [headcount] ) )
+                + INT ( ISERROR ( [novos_clientes] ) )
+                + INT ( ISERROR ( [contratos_fechados] ) )
+                + INT ( ISERROR ( [churn_medio_pct] ) )
+                + INT ( ISERROR ( [nps_medio] ) )
+                + INT ( ISERROR ( [receita_por_cliente] ) )
+                + INT ( ISERROR ( [receita_por_colaborador] ) )
+                + INT ( ISERROR ( [sankey_valor] ) )
+                + INT ( ISERROR ( [sankey_valor_aa] ) )
+                + INT ( ISERROR ( [var_sankey_valor_aa_pct] ) )
+                + INT ( ISERROR ( [prejuizo_liquido] ) )
+                + INT ( ISERROR ( [meses_com_prejuizo] ) )
+                + INT ( ISERROR ( [data_ultima_carga] ) )
+        )
+)

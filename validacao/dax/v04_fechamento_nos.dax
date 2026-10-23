@@ -1,0 +1,87 @@
+-- v04: fechamento dos nós do Sankey (entrada = saída em todo nó com entrada e saída)
+-- generaliza a query de validação da seção 7.3 do CLAUDE.md para todos os recortes
+-- esperado: nenhuma linha em cada EVALUATE
+DEFINE
+    VAR nos_intermediarios =
+        INTERSECT (
+            DISTINCT ( 'dim_link_sankey'[cod_no_origem] ),
+            DISTINCT ( 'dim_link_sankey'[cod_no_destino] )
+        )
+    MEASURE '_medidas'[entrada_no] =
+        VAR no = SELECTEDVALUE ( 'dim_no_sankey'[cod_no] )
+        RETURN
+            SUMX (
+                CALCULATETABLE (
+                    VALUES ( 'dim_link_sankey'[cod_link] ),
+                    'dim_link_sankey'[cod_no_destino] = no
+                ),
+                [sankey_valor]
+            ) + 0
+    MEASURE '_medidas'[saida_no] =
+        VAR no = SELECTEDVALUE ( 'dim_no_sankey'[cod_no] )
+        RETURN
+            SUMX (
+                CALCULATETABLE (
+                    VALUES ( 'dim_link_sankey'[cod_link] ),
+                    'dim_link_sankey'[cod_no_origem] = no
+                ),
+                [sankey_valor]
+            ) + 0
+
+-- v04a: mês × cenário × região
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        'dim_cenario'[cod_cenario],
+        'dim_calendario'[ano_mes],
+        'dim_regiao'[cod_regiao],
+        'dim_no_sankey'[cod_no],
+        TREATAS ( nos_intermediarios, 'dim_no_sankey'[cod_no] ),
+        "entrada", [entrada_no],
+        "saida", [saida_no]
+    ),
+    ABS ( [entrada] - [saida] ) > 0.05
+)
+
+-- v04b: mês × cenário, todas as regiões
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        'dim_cenario'[cod_cenario],
+        'dim_calendario'[ano_mes],
+        'dim_no_sankey'[cod_no],
+        TREATAS ( nos_intermediarios, 'dim_no_sankey'[cod_no] ),
+        "entrada", [entrada_no],
+        "saida", [saida_no]
+    ),
+    ABS ( [entrada] - [saida] ) > 0.05
+)
+
+-- v04c: ano × cenário × região
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        'dim_cenario'[cod_cenario],
+        'dim_calendario'[ano],
+        'dim_regiao'[cod_regiao],
+        'dim_no_sankey'[cod_no],
+        TREATAS ( nos_intermediarios, 'dim_no_sankey'[cod_no] ),
+        "entrada", [entrada_no],
+        "saida", [saida_no]
+    ),
+    ABS ( [entrada] - [saida] ) > 0.05
+)
+
+-- v04d: ano × cenário, todas as regiões
+EVALUATE
+FILTER (
+    SUMMARIZECOLUMNS (
+        'dim_cenario'[cod_cenario],
+        'dim_calendario'[ano],
+        'dim_no_sankey'[cod_no],
+        TREATAS ( nos_intermediarios, 'dim_no_sankey'[cod_no] ),
+        "entrada", [entrada_no],
+        "saida", [saida_no]
+    ),
+    ABS ( [entrada] - [saida] ) > 0.05
+)

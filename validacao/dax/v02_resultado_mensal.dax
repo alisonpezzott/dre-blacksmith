@@ -1,0 +1,28 @@
+-- v02a: resultado mensal por cenário
+-- comparar com referencias.json → resultado_mensal (36 meses × 2 cenários)
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_cenario'[cod_cenario],
+    'dim_calendario'[indice_mes],
+    'dim_calendario'[ano_mes],
+    "receita_liquida", [receita_liquida],
+    "lucro_bruto", [lucro_bruto],
+    "ebitda", [ebitda],
+    "lucro_liquido", [lucro_liquido]
+)
+ORDER BY
+    'dim_cenario'[cod_cenario],
+    'dim_calendario'[indice_mes]
+
+-- v02b: meses com prejuízo por ano
+-- esperado: 2 em 2025 no realizado (mar e abr); nenhum no orçado
+EVALUATE
+SUMMARIZECOLUMNS (
+    'dim_cenario'[cod_cenario],
+    'dim_calendario'[ano],
+    "meses_com_prejuizo", [meses_com_prejuizo] + 0,
+    "prejuizo_liquido", [prejuizo_liquido]
+)
+ORDER BY
+    'dim_cenario'[cod_cenario],
+    'dim_calendario'[ano]
