@@ -6,7 +6,7 @@ Projeto de ponta a ponta no **Microsoft Fabric** que mostra, num gráfico de **S
 
 O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro. Clicar num ponto de um gráfico filtra os outros, como no Power BI.
 
-![App publicado no Fabric: março de 2025 selecionado na tendência mensal. O nó vermelho "Prejuízo Líquido" aparece no Sankey cobrindo despesas, D&A e resultado financeiro, e os KPIs mostram o prejuízo de R$ 2,59 mi.](docs/imagens/app_blacksmith_dre.png)
+![Blacksmith DRE com mar/2025 selecionado: KPIs com o prejuízo de R$ 2,59 mi e, no Sankey, o nó vermelho "Prejuízo Líquido" cobrindo despesas, D&A e resultado financeiro.](docs/imagens/app_blacksmith_dre_capa.png)
 
 *Mar/2025 selecionado na tendência: o EBITDA fica negativo e o nó **Prejuízo Líquido** passa a financiar despesas, D&A e resultado financeiro.*
 
@@ -39,6 +39,13 @@ O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro
   - Em **mar/2025** a empresa fecha com **prejuízo de R$ 2,59 mi**.
   - Em **abr/2025**, com **prejuízo de R$ 0,61 mi**, e nesse mês só o Sudeste fica negativo.
   - O ano de 2025 inteiro continua lucrativo (R$ 13,09 mi).
+
+<details>
+<summary><strong>Ver o app inteiro</strong> (tendência mensal, regiões, DRE realizado × orçado e indicadores operacionais)</summary>
+
+![App completo publicado no portal do Fabric, com mar/2025 selecionado: KPIs, Sankey, tendência mensal com os meses de prejuízo, receita por região, DRE realizado × orçado e painel operacional.](docs/imagens/app_blacksmith_dre.png)
+
+</details>
 
 ### Os entregáveis
 
@@ -118,7 +125,7 @@ app_blacksmith_dre/              # Fabric App (Vite + React 19 + TypeScript)
   rayfin/rayfin.yml              # configuração do item Rayfin
   fabric.example.yaml            # modelo do fabric.yaml (conexão com o modelo semântico)
 docs/log_validacao.md            # registro das validações de cada fase
-docs/imagens/                    # print do app publicado (usado neste README)
+docs/imagens/                    # prints do app publicado (capa e app inteiro)
 CLAUDE.md                        # especificação completa do projeto
 .env.example                     # modelo do .env com os IDs do ambiente
 ```
