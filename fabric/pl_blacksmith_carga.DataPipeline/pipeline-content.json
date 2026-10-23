@@ -1,0 +1,65 @@
+{
+  "properties": {
+    "description": "Carga da Blacksmith: ingestão → qualidade → refresh do sm_blacksmith_dre. O refresh só roda se a qualidade passar.",
+    "activities": [
+      {
+        "name": "nb_01_ingestao",
+        "type": "TridentNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": "460ae5f8-c41c-40aa-aa75-95707b87193f",
+          "workspaceId": "45307096-4208-4180-a75b-8846fc8f9e24"
+        }
+      },
+      {
+        "name": "nb_02_qualidade",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "nb_01_ingestao",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": "d8d36bfc-a04c-4ae2-a455-cbb80f380319",
+          "workspaceId": "45307096-4208-4180-a75b-8846fc8f9e24"
+        }
+      },
+      {
+        "name": "nb_03_atualizar_modelo",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "nb_02_qualidade",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "policy": {
+          "timeout": "0.00:30:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": "686ab03d-82f7-4c34-a4a2-f197c46dbc01",
+          "workspaceId": "45307096-4208-4180-a75b-8846fc8f9e24"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+# Log de validação: Blacksmith DRE
+
+Gabarito: `validacao/referencias.json`, gerado de `dataset/` por `validacao/gerar_referencias.py` (substitui as abas `dre_anual` e `resultado_mensal` do Excel, que não está no repositório). Diferença tolerada: R$ 1,00.
+
+## Passo 0: preparação local
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-22 | Pré-requisitos da Fase 0 (capacidade Fabric, papel no workspace, Execute Queries REST API, workload Fabric Apps) | confirmados | confirmados na conversa de planejamento | ok |
+| 2026-10-22 | Node.js ≥ 20 (Fase 4) | ≥ 20 | v24.20.0 | ok |
+| 2026-10-22 | fab CLI | instalado | 1.8.0 (Python 3.13, via `uv tool`) | ok |
+| 2026-10-22 | `gerar_referencias.py`: ruff format, ruff check, mypy --strict | sem apontamentos | sem apontamentos | ok |
+| 2026-10-22 | Lucro líquido realizado 2024 / 2025 / 2026 (local) | 15.882.255,48 / 13.088.163,15 / 24.560.318,22 | 15.882.255,48 / 13.088.163,15 / 24.560.318,22 | ok |
+| 2026-10-22 | Margem líquida realizada 2024 / 2025 / 2026 (local) | 11,7% / 8,5% / 14,0% | 11,72% / 8,45% / 13,98% | ok |
+| 2026-10-22 | Meses com prejuízo consolidado, realizado (local) | 2025-03, 2025-04 | 2025-03, 2025-04 | ok |
+| 2026-10-22 | Fechamento do Sankey: mês, mês × região, ano e ano × região, 2 cenários (local) | 0 falhas | 468 recortes, 0 falhas | ok |
+
+## Fase 1: ingestão
+
+CSVs em `Files/Raw/blacksmith/` (pasta criada no portal com "R" maiúsculo; o parâmetro `caminho_raw` do `nb_01` acompanha).
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-23 | `nb_01_ingestao` via `fab job run` (job 6f1b7e71) | Completed, asserts de contagem ok | Completed | ok |
+| 2026-10-23 | Tabelas Delta em `dbo` | 8 tabelas | dim_calendario, dim_cenario, dim_conta, dim_link_sankey, dim_no_sankey, dim_regiao, fato_lancamentos, fato_operacional | ok |
+| 2026-10-23 | Contagens (assert no `nb_01`) | 36 / 19 / 5 / 30 / 33 / 6.484 / 180 / 2 | conferidas pelo assert | ok |
+| 2026-10-23 | Tipos (`fab table schema`) | nenhuma coluna numérica ou de data como string | data `date`; ano, mes, indice_mes, ordem_dre, coluna_sankey, etapa, ordem_link, ordem_cenario e contagens `integer`; valor e valor_dre `decimal(18,2)`; churn_pct `double`; data_hora_carga `timestamp` | ok |
+
+## Fase 2: qualidade
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-23 | `nb_02_qualidade` via `fab job run` (job 11b8eed2) | Completed (`qualidade ok`) | Completed | ok |
+| 2026-10-23 | Lucro líquido realizado 2024 / 2025 / 2026 (assert) | 15.882.255,48 / 13.088.163,15 / 24.560.318,22 ± R$ 1 | conferido pelo assert | ok |
+| 2026-10-23 | Meses com prejuízo consolidado (assert) | realizado: 2025-03 e 2025-04; orçado: nenhum | conferido pelo assert | ok |
+| 2026-10-23 | Teste 3 corrigido: link folha só para contas de grupos com 2+ contas | nenhuma conta sem link folha | conferido pelo assert | ok |
+
+## Fase 3: modelo semântico
+
+Validação automatizada: `uv run validacao/validar_modelo.py` roda as consultas de `validacao/dax/` pela API `executeQueries` (via `fab api`) e compara com `referencias.json`. O MCP Fabric IQ conectou no modelo, mas não devolveu linhas; por isso a validação foi feita pela API REST, com o mesmo login.
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-23 | Tipo de Direct Lake (`expressions.tmdl`) | Direct Lake on OneLake | `AzureStorage.DataLake` | ok |
+| 2026-10-23 | Import do TMDL (relacionamentos, `_medidas` calculada, 53 medidas, colunas) | aceito | aceito; `culture` mantida em en-US (o serviço não permite trocar o idioma de um modelo existente) | ok |
+| 2026-10-23 | Refresh (reenquadramento) | Completed | Completed | ok |
+| 2026-10-23 | v01 DRE anual, 3 anos × 2 cenários (13 linhas da DRE + 3 margens) | = `referencias.json` (± R$ 1) | 6/6 recortes iguais; realizado 2024: LL 15.882.255,48, margem 11,7% | ok |
+| 2026-10-23 | v02 resultado mensal e meses com prejuízo | 72 recortes; 2 meses em 2025 realizado | 72/72; realizado 2025 = 2, demais 0 | ok |
+| 2026-10-23 | v03 Sankey mar/2025, abr/2025, 2025, abr/2025 Sudeste e Sul | tabela da seção 1 / `referencias.json` | todos os links iguais (ex.: prejuízo → despesas operacionais mar/2025 = 2.071.798,75; lair → lucro líquido 2025 = 13.088.163,15) | ok |
+| 2026-10-23 | v04 fechamento dos nós: mês e ano × cenário, consolidado e por região | 0 linhas | 0 linhas nas 4 consultas | ok |
+| 2026-10-23 | v05 `receita_liquida_aa` 2025 = `receita_liquida` 2024; `_aa` extras; guarda em "todos os anos" | iguais; vazias sem ano anterior | iguais; vazias em 2024 e em todos os anos | ok |
+| 2026-10-23 | v05c medidas sem erro por `mes_ano` | 36 meses, 0 erros | 36 meses, 0 erros | ok |
+| 2026-10-23 | v06 abr/2025 por região | só o Sudeste negativo e com links de prejuízo | Sudeste −865.507,86; links de prejuízo só no Sudeste | ok |
+| 2026-10-23 | IDs do workspace, lakehouse e modelo | registrados | em `.env` | ok |
+| — | Compartilhar o modelo (Read + Build) com os usuários do app | — | pendente: aguardando a lista de usuários ou grupo | pendente |
+
+Observação para a Fase 4: o Direct Lake acrescenta um membro em branco às dimensões. Consultas que forçam valor (`+ 0`) ou iteram `VALUES` mostram uma linha extra com chave vazia; usar `DISTINCT` ou deixar o `SUMMARIZECOLUMNS` remover os vazios.
+
+## Pipeline `pl_blacksmith_carga`
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-23 | `fab job run` do pipeline (job ce175a44): nb_01 → nb_02 → nb_03 | Completed | Completed | ok |
+| 2026-10-23 | Revalidação do modelo após o pipeline (`validar_modelo.py`) | 0 falhas | 31 verificações, 0 falhas | ok |
+| 2026-10-23 | `data_ultima_carga` | horário da execução (Brasília) | 23/10/2026 00:25 | ok |
+| — | Desligar "Keep your Direct Lake data up to date" no modelo | — | pendente (passo manual no portal) | pendente |
