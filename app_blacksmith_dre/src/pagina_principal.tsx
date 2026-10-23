@@ -4,6 +4,7 @@
 // região filtra os demais visuais; Ctrl+clique soma pontos; Esc ou o botão da barra limpa.
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import type { InteractionEvent } from "@microsoft/fabric-visuals-core";
 
 import { numero, texto, useConsulta, type Linha } from "@/dados/cliente_modelo";
@@ -209,16 +210,42 @@ export function PaginaPrincipal() {
     const [cod_no_selecionado, selecionar_no] = useState<string | null>(null);
     const no_selecionado = nos_sankey?.find((no) => no.cod_no === cod_no_selecionado);
 
+    // Sankey em tela cheia: o cartão cobre a janela do app (o portal do Fabric roda o app num
+    // iframe) e, se o navegador permitir, a página entra em tela cheia de verdade
+    const [sankey_expandido, expandir_sankey] = useState(false);
+    useEffect(() => {
+        if (!sankey_expandido) return;
+        document.documentElement.requestFullscreen?.().catch(() => undefined);
+        const overflow_anterior = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const ao_teclar = (evento: KeyboardEvent) => {
+            if (evento.key === "Escape") expandir_sankey(false);
+        };
+        // o Esc da tela cheia do navegador não chega ao keydown: sair dela também fecha o cartão
+        const ao_sair_tela_cheia = () => {
+            if (!document.fullscreenElement) expandir_sankey(false);
+        };
+        window.addEventListener("keydown", ao_teclar);
+        document.addEventListener("fullscreenchange", ao_sair_tela_cheia);
+        return () => {
+            window.removeEventListener("keydown", ao_teclar);
+            document.removeEventListener("fullscreenchange", ao_sair_tela_cheia);
+            document.body.style.overflow = overflow_anterior;
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
+        };
+    }, [sankey_expandido]);
+
     // Esc limpa a seleção cruzada, como clicar no fundo do visual de origem
+    // (com o Sankey em tela cheia, o Esc só fecha a tela cheia)
     const tem_selecao = Boolean(filtros?.selecao);
     useEffect(() => {
-        if (!tem_selecao) return;
+        if (!tem_selecao || sankey_expandido) return;
         const ao_teclar = (evento: KeyboardEvent) => {
             if (evento.key === "Escape") acoes.limpar_selecao();
         };
         window.addEventListener("keydown", ao_teclar);
         return () => window.removeEventListener("keydown", ao_teclar);
-    }, [tem_selecao, acoes]);
+    }, [tem_selecao, sankey_expandido, acoes]);
 
     // consultas filtradas: cada uma uma vez, todas em paralelo
     const kpi = useConsulta(ctx ? q_kpis(ctx) : null);
@@ -349,16 +376,33 @@ export function PaginaPrincipal() {
             <Cartao
                 titulo="Do faturamento ao lucro"
                 subtitulo={`${recorte} · clique num nó para destacar os fluxos e ver a evolução mensal`}
+                className={sankey_expandido ? "fixed inset-0 z-50 overflow-hidden" : undefined}
                 acoes={
-                    <Legenda
-                        itens={[
-                            { rotulo: "Receitas", cor: paleta.receita },
-                            { rotulo: "Totais", cor: paleta.total },
-                            { rotulo: "Custos e despesas", cor: paleta.custo },
-                            { rotulo: "Lucros", cor: paleta.lucro },
-                            { rotulo: "Prejuízo", cor: paleta.prejuizo },
-                        ]}
-                    />
+                    <div className="flex items-center gap-4">
+                        <Legenda
+                            itens={[
+                                { rotulo: "Receitas", cor: paleta.receita },
+                                { rotulo: "Totais", cor: paleta.total },
+                                { rotulo: "Custos e despesas", cor: paleta.custo },
+                                { rotulo: "Lucros", cor: paleta.lucro },
+                                { rotulo: "Prejuízo", cor: paleta.prejuizo },
+                            ]}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => expandir_sankey((atual) => !atual)}
+                            aria-label={sankey_expandido ? "Sair da tela cheia" : "Expandir o Sankey em tela cheia"}
+                            aria-pressed={sankey_expandido}
+                            title={sankey_expandido ? "Sair da tela cheia (Esc)" : "Tela cheia"}
+                            className="p-1 text-muted-foreground hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            {sankey_expandido ? (
+                                <Minimize2 className="icon-size-300" aria-hidden="true" />
+                            ) : (
+                                <Maximize2 className="icon-size-300" aria-hidden="true" />
+                            )}
+                        </button>
+                    </div>
                 }
             >
                 <GraficoSankey
@@ -369,6 +413,7 @@ export function PaginaPrincipal() {
                     chave_recorte={JSON.stringify(filtros)}
                     no_selecionado={cod_no_selecionado}
                     ao_selecionar_no={(no) => selecionar_no((atual) => (atual === no.cod_no ? null : no.cod_no))}
+                    expandido={sankey_expandido}
                 />
             </Cartao>
 

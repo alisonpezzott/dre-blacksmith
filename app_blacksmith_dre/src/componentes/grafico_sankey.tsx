@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { cor_por_tipo_no, opacidade_esmaecida, usePaletaGraficos } from "@/tema/tema_graficos";
 import { EstadoErro, EstadoVazio, Esqueleto } from "./estados_carregamento";
 
-const altura_total = 560;
+const altura_padrao = 560;
 const largura_minima = 1100;
 const margem = { topo: 16, base: 16, esquerda: 4, direita: 196 };
 const largura_no = 14;
@@ -32,6 +32,8 @@ interface GraficoSankeyProps {
     chave_recorte: string;
     no_selecionado: string | null;
     ao_selecionar_no: (no: NoLayout) => void;
+    /** em tela cheia, ocupa a altura do contêiner pai em vez da altura padrão */
+    expandido?: boolean;
 }
 
 interface Dica {
@@ -72,9 +74,10 @@ export function GraficoSankey({
     chave_recorte,
     no_selecionado,
     ao_selecionar_no,
+    expandido = false,
 }: GraficoSankeyProps) {
     const conteiner = useRef<HTMLDivElement>(null);
-    const [largura_conteiner, definir_largura] = useState(largura_minima);
+    const [tamanho_conteiner, definir_tamanho] = useState({ largura: largura_minima, altura: altura_padrao });
     const [destaque, definir_destaque] = useState<{ link?: string; no?: string } | null>(null);
     const [dica, definir_dica] = useState<Dica | null>(null);
     const paleta = usePaletaGraficos();
@@ -83,12 +86,15 @@ export function GraficoSankey({
     useEffect(() => {
         const elemento = conteiner.current;
         if (!elemento) return;
-        const observador = new ResizeObserver(([entrada]) => definir_largura(entrada.contentRect.width));
+        const observador = new ResizeObserver(([entrada]) =>
+            definir_tamanho({ largura: entrada.contentRect.width, altura: Math.floor(entrada.contentRect.height) }),
+        );
         observador.observe(elemento);
         return () => observador.disconnect();
     }, []);
 
-    const largura = Math.max(largura_conteiner, largura_minima);
+    const largura = Math.max(tamanho_conteiner.largura, largura_minima);
+    const altura_total = expandido ? Math.max(tamanho_conteiner.altura, altura_padrao) : altura_padrao;
 
     const layout = useMemo(() => {
         if (!nos || !links) return null;
@@ -98,7 +104,7 @@ export function GraficoSankey({
             largura_no,
             espaco_vertical: 14,
         });
-    }, [nos, links, largura]);
+    }, [nos, links, largura, altura_total]);
 
     const receita_liquida = layout?.nos.find((no) => no.cod_no === "receita_liquida")?.valor ?? null;
     const rotulos = useMemo(() => (layout ? posicoes_rotulos(layout.nos) : new Map<string, number>()), [layout]);
@@ -297,7 +303,11 @@ export function GraficoSankey({
     }
 
     return (
-        <div ref={conteiner} className="relative w-full overflow-x-auto overflow-y-hidden" style={{ height: altura_total }}>
+        <div
+            ref={conteiner}
+            className={cn("relative w-full overflow-x-auto overflow-y-hidden", expandido && "min-h-0 flex-1 overflow-y-auto")}
+            style={expandido ? undefined : { height: altura_padrao }}
+        >
             {conteudo}
             {dica && (
                 <div
