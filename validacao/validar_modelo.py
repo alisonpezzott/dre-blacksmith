@@ -2,7 +2,8 @@
 
 Roda as consultas de validacao/dax/ pela API executeQueries do Power BI (via `fab api`,
 com o login do fab CLI) e compara cada resultado com o gabarito gerado por
-gerar_referencias.py. Lê os IDs do workspace e do modelo do .env na raiz.
+gerar_referencias.py. Lê os IDs do workspace e do modelo do fabric.yaml do app
+(gravado por `npm run conectar` em app_blacksmith_dre/).
 
     uv run validacao/validar_modelo.py
 
@@ -23,7 +24,7 @@ from typing import Any, TypeAlias
 
 PASTA_VALIDACAO = Path(__file__).resolve().parent
 PASTA_DAX = PASTA_VALIDACAO / "dax"
-ARQUIVO_ENV = PASTA_VALIDACAO.parent / ".env"
+ARQUIVO_CONEXAO = PASTA_VALIDACAO.parent / "app_blacksmith_dre" / "fabric.yaml"
 TOLERANCIA_VALOR = 1.0  # R$ 1,00, como na seção 1 do CLAUDE.md
 TOLERANCIA_RAZAO = 1e-4  # margens e variações em fração
 
@@ -45,15 +46,23 @@ CAMPOS_DRE = (
 )
 
 
-def ler_env() -> dict[str, str]:
-    """Lê as chaves CHAVE=valor do .env da raiz, ignorando comentários."""
-    valores: dict[str, str] = {}
-    for linha in ARQUIVO_ENV.read_text(encoding="utf-8").splitlines():
-        linha = linha.strip()
-        if linha and not linha.startswith("#") and "=" in linha:
-            chave, valor = linha.split("=", 1)
-            valores[chave.strip()] = valor.strip()
-    return valores
+def ler_conexao() -> dict[str, str]:
+    """Lê workspaceId e itemId da conexão modelo_dre no fabric.yaml do app.
+
+    Raises:
+        FileNotFoundError: Se o app ainda não foi conectado ao modelo.
+        KeyError: Se a conexão modelo_dre não estiver completa.
+    """
+    if not ARQUIVO_CONEXAO.exists():
+        raise FileNotFoundError(
+            f"{ARQUIVO_CONEXAO} não existe; rode `npm run conectar` em app_blacksmith_dre/"
+        )
+    texto = ARQUIVO_CONEXAO.read_text(encoding="utf-8")
+    bloco = texto[texto.index("modelo_dre:") :]
+    valores = dict(
+        re.findall(r"^\s*(workspaceId|itemId):\s*['\"]?([\w-]+)", bloco, re.MULTILINE)
+    )
+    return {"workspaceId": valores["workspaceId"], "itemId": valores["itemId"]}
 
 
 def localizar_fab() -> str:
@@ -93,7 +102,7 @@ def executar(fab: str, ids: dict[str, str], consulta: str) -> list[Linha]:
 
     Args:
         fab: Executável do fab CLI.
-        ids: IDs lidos do .env (ID_WORKSPACE e ID_MODELO_SEMANTICO).
+        ids: workspaceId e itemId do modelo, lidos do fabric.yaml do app.
         consulta: Consulta DAX com um EVALUATE.
 
     Returns:
@@ -111,10 +120,7 @@ def executar(fab: str, ids: dict[str, str], consulta: str) -> list[Linha]:
     ) as arquivo:
         json.dump(corpo, arquivo)
     try:
-        rota = (
-            f"groups/{ids['ID_WORKSPACE']}/datasets/{ids['ID_MODELO_SEMANTICO']}"
-            "/executeQueries"
-        )
+        rota = f"groups/{ids['workspaceId']}/datasets/{ids['itemId']}/executeQueries"
         saida = subprocess.run(
             [fab, "api", "-A", "powerbi", "-X", "post", rota, "-i", arquivo.name],
             capture_output=True,
@@ -179,7 +185,7 @@ def main() -> int:
         0 se tudo bate; 1 caso contrário.
     """
     ref = json.loads((PASTA_VALIDACAO / "referencias.json").read_text(encoding="utf-8"))
-    ids = ler_env()
+    ids = ler_conexao()
     fab = localizar_fab()
     v = Verificador()
 
