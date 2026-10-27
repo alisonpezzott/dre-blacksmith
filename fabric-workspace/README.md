@@ -1,0 +1,1 @@
+Just a dummy README.md to create the folder `fabric-workspace` 
