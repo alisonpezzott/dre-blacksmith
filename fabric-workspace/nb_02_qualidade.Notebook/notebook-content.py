@@ -6,25 +6,29 @@
 # META   "kernel_info": {
 # META     "name": "synapse_pyspark"
 # META   },
-# META   "dependencies": {
-# META     "lakehouse": {
-# META       "default_lakehouse": "1beff059-8511-4959-99b1-a272a637573e",
-# META       "default_lakehouse_name": "lh_blacksmith",
-# META       "default_lakehouse_workspace_id": "45307096-4208-4180-a75b-8846fc8f9e24",
-# META       "known_lakehouses": [
-# META         {
-# META           "id": "1beff059-8511-4959-99b1-a272a637573e"
-# META         }
-# META       ]
-# META     }
-# META   }
+# META   "dependencies": {}
 # META }
 
 # MARKDOWN ********************
 
 # # nb_02_qualidade
-# # Testes de qualidade das 8 tabelas do `lh_blacksmith`. Cada teste registra a falha sem interromper; a última célula falha (`assert`) com a lista completa e, se tudo passar, imprime `qualidade ok`.
-# # Inclui os 5 testes da seção 6 do CLAUDE.md. O teste 3 (link folha por conta) vale só para contas de grupos com 2 ou mais contas: D&A, resultado financeiro e IR/CSLL são contas únicas no grupo e chegam ao Sankey pelos links de subtotal e de prejuízo do grupo.
+# Testes de qualidade das 8 tabelas do `lh_blacksmith`. Cada teste registra a falha sem interromper; a última célula falha (`assert`) com a lista completa e, se tudo passar, imprime `qualidade ok`.
+# - O lakehouse é achado pelo nome no workspace do próprio notebook (`%%configure`).
+# - O teste de link folha por conta vale só para contas de grupos com 2 ou mais contas: D&A, resultado financeiro e IR/CSLL são contas únicas no grupo e chegam ao Sankey pelos links de subtotal e de prejuízo do grupo.
+
+# CELL ********************
+
+# MAGIC %%configure -f
+# MAGIC {
+# MAGIC     "defaultLakehouse": { "name": "lh_blacksmith" }
+# MAGIC }
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
 
 # CELL ********************
 

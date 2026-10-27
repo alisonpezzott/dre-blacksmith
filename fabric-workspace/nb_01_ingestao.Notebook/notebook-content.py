@@ -6,30 +6,36 @@
 # META   "kernel_info": {
 # META     "name": "synapse_pyspark"
 # META   },
-# META   "dependencies": {
-# META     "lakehouse": {
-# META       "default_lakehouse": "1beff059-8511-4959-99b1-a272a637573e",
-# META       "default_lakehouse_name": "lh_blacksmith",
-# META       "default_lakehouse_workspace_id": "45307096-4208-4180-a75b-8846fc8f9e24",
-# META       "known_lakehouses": [
-# META         {
-# META           "id": "1beff059-8511-4959-99b1-a272a637573e"
-# META         }
-# META       ]
-# META     }
-# META   }
+# META   "dependencies": {}
 # META }
 
 # MARKDOWN ********************
 
 # # nb_01_ingestao
-# # Lê os 7 CSVs de `Files/Raw/blacksmith/` com schema explícito e grava as 8 tabelas Delta do `lh_blacksmith` (os 7 CSVs + `dim_cenario`).
-# # - A leitura falha (`FAILFAST`) em vez de gravar nulo quando um valor não converte, e confere os nomes do cabeçalho contra o schema (`enforceSchema = false`).
+# Baixa os 7 CSVs de `dataset/` do repositório no GitHub para `Files/Raw/blacksmith/`, lê com schema explícito e grava as 8 tabelas Delta do `lh_blacksmith` (os 7 CSVs + `dim_cenario`).
+# - O lakehouse é achado pelo nome no workspace do próprio notebook (`%%configure`), então o notebook funciona em qualquer workspace sincronizado com o Git.
+# - Se o download falhar (repositório privado, sem rede), usa os CSVs que já estiverem no lakehouse.
+# - A leitura falha (`FAILFAST`) em vez de gravar nulo quando um valor não converte, e confere os nomes do cabeçalho contra o schema (`enforceSchema = false`).
 # - Recarga completa e idempotente (`overwrite`): a base é pequena, fictícia e totalmente derivável dos CSVs.
-# - A última célula relê as tabelas e confere as contagens do dicionário de dados (seção 5.2 do CLAUDE.md).
+# - A última célula relê as tabelas e confere as contagens do dicionário de dados.
+
+# CELL ********************
+
+# MAGIC %%configure -f
+# MAGIC {
+# MAGIC     "defaultLakehouse": { "name": "lh_blacksmith" }
+# MAGIC }
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
 
 # PARAMETERS CELL ********************
 
+url_dataset = "https://raw.githubusercontent.com/alisonpezzott/dre-blacksmith/main/dataset"
 caminho_raw = "Files/Raw/blacksmith"
 
 # METADATA ********************
@@ -44,6 +50,7 @@ caminho_raw = "Files/Raw/blacksmith"
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import requests
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
@@ -110,6 +117,22 @@ contagens_esperadas = {
 
 # CELL ********************
 
+def baixar_csv(tabela: str) -> None:
+    """Baixa o CSV do repositório para Files/Raw; sem acesso, mantém o arquivo que já estiver lá."""
+    destino = f"{caminho_raw}/{tabela}.csv"
+    try:
+        resposta = requests.get(f"{url_dataset}/{tabela}.csv", timeout=60)
+        resposta.raise_for_status()
+    except requests.RequestException as erro:
+        assert notebookutils.fs.exists(destino), (
+            f"{tabela}.csv: download falhou ({erro}) e o arquivo não existe em {caminho_raw}"
+        )
+        print(f"{tabela}.csv: download falhou, usando o arquivo do lakehouse")
+        return
+    notebookutils.fs.put(destino, resposta.content.decode("utf-8"), True)
+    print(f"{tabela}.csv: baixado")
+
+
 def ler_csv(tabela: str) -> DataFrame:
     """Lê o CSV com schema explícito e tira os espaços das bordas das colunas de texto."""
     df = (
@@ -139,6 +162,9 @@ def gravar(df: DataFrame, tabela: str) -> None:
 # META }
 
 # CELL ********************
+
+for tabela in schemas:
+    baixar_csv(tabela)
 
 tabelas = {tabela: ler_csv(tabela) for tabela in schemas}
 
