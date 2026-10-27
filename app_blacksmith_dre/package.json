@@ -17,7 +17,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "validate:visual": "node scripts/validate-visual.mjs",
-    "validar:consultas": "node scripts/validar_consultas.mjs",
     "conectar": "node scripts/conectar_modelo.mjs"
   },
   "dependencies": {

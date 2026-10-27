@@ -1,9 +1,9 @@
 # Exemplo do fabric.yaml (fora do git). Não edite à mão: gere com a URL do modelo no portal do Fabric:
-#   npm run conectar -- "<URL do sm_blacksmith_dre>"
+#   npm run conectar -- "<URL do blacksmith_dre>"
 activeProfile: default
 profiles:
   default:
     semanticModels:
       modelo_dre:
         workspaceId: <workspace-id>
-        itemId: <item-id-sm_blacksmith_dre>
+        itemId: <item-id-blacksmith_dre>

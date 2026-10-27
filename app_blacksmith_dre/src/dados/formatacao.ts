@@ -1,4 +1,4 @@
-// Formatação com as format strings do sm_blacksmith_dre, em pt-BR.
+// Formatação com as format strings do blacksmith_dre, em pt-BR.
 
 import { formatValue, overrideFormattingLocale } from "@microsoft/fabric-visuals-core";
 

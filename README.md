@@ -2,7 +2,9 @@
 
 Projeto de ponta a ponta no **Microsoft Fabric** que mostra, num gráfico de **Sankey**, como a receita de uma empresa se transforma em lucro, ou em prejuízo. O caminho completo:
 
-**CSVs → lakehouse (Delta) → testes de qualidade → modelo semântico Direct Lake (DAX) → Fabric App (React + TypeScript)**
+**CSVs no GitHub → modelo semântico Import (Power Query + DAX + testes de qualidade) → Fabric App (React + TypeScript)**
+
+Toda a engenharia fica dentro do modelo: não há lakehouse, notebook nem pipeline. Um report de conferência, sobre o mesmo modelo, mostra os testes e os números de referência.
 
 O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro. Clicar num ponto de um gráfico filtra os outros, como no Power BI.
 
@@ -51,13 +53,9 @@ O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro
 
 | camada | item | o que faz |
 |---|---|---|
-| Ingestão | `nb_01_ingestao` | Lê os 7 CSVs com schema explícito (`FAILFAST`) e grava 8 tabelas Delta com V-Order. |
-| Qualidade | `nb_02_qualidade` | Testa contagens, chaves, integridade referencial, regras de sinal, estrutura do Sankey e os lucros de referência. Falha se algum teste falhar. |
-| Atualização | `nb_03_atualizar_modelo` | Faz o refresh do modelo com semantic link, só depois que a qualidade passa. |
-| Orquestração | `pl_blacksmith_carga` | Pipeline que encadeia nb_01 → nb_02 → nb_03. |
-| Modelo | `sm_blacksmith_dre` | Modelo Direct Lake on OneLake em TMDL, com 53 medidas DAX: DRE, margens, comparativos com o ano anterior e com o orçado, indicadores operacionais e o Sankey. |
+| Modelo | `blacksmith_dre` | Modelo **Import** em TMDL. O Power Query lê os 7 CSVs de `dataset/` no GitHub, confere cabeçalho e tipos (o refresh falha se algo não bater) e cria `dim_cenario`. Tem 54 medidas DAX (DRE, margens, comparativos com o ano anterior e com o orçado, indicadores operacionais e o Sankey) e a tabela calculada `_qualidade`, com 50 testes recalculados a cada refresh. |
+| Conferência | `blacksmith_dre` | Report Power BI (PBIR) sobre o modelo: testes de qualidade, DRE anual, resultado mensal, links do Sankey, regiões e operacional. |
 | App | `app_blacksmith_dre` | Fabric App com KPIs, Sankey, tendência mensal, regiões, tabela da DRE e painel operacional, além de filtragem cruzada e tema claro/escuro. |
-| Validação | `validacao/` e scripts do app | Comparam o modelo e as consultas do app com o gabarito `validacao/referencias.json` (tolerância de R$ 1,00). |
 
 ### A lógica do prejuízo no Sankey
 
@@ -76,14 +74,12 @@ A especificação completa (dicionário de dados, todas as medidas, consultas, l
 ```
 GitHub: fabric-workspace/ ──(integração Git do Fabric)──► itens do workspace
 
-dataset/*.csv (GitHub) ──► lh_blacksmith/Files/Raw/blacksmith/    ┐
-                     │  nb_01_ingestao (baixa e grava)             │
-                     ▼                                             │
-                tabelas Delta (lh_blacksmith/Tables/dbo)           │ pl_blacksmith_carga
-                     │  nb_02_qualidade (testes)                   │
-                     │  nb_03_atualizar_modelo (liga e atualiza)   ┘
+dataset/*.csv (raw.githubusercontent.com)
+                     │  refresh: Power Query (url_dataset + ler_csv)
                      ▼
-                sm_blacksmith_dre (Direct Lake on OneLake, DAX)
+                blacksmith_dre (Import, DAX, tabela _qualidade)
+                     │                         │
+                     │                         └──► blacksmith_dre (report PBIR)
                      │  Execute Queries API (@microsoft/fabric-app-data)
                      ▼
                 app_blacksmith_dre (Fabric App, template dataapp do Rayfin)
@@ -94,10 +90,8 @@ Nomes dos itens (vêm do Git; só o workspace você escolhe):
 | item | nome |
 |---|---|
 | workspace | `ws_blacksmith_financeiro` |
-| lakehouse | `lh_blacksmith` |
-| notebooks | `nb_01_ingestao`, `nb_02_qualidade`, `nb_03_atualizar_modelo` |
-| pipeline | `pl_blacksmith_carga` |
-| modelo semântico | `sm_blacksmith_dre` |
+| modelo semântico | `blacksmith_dre` |
+| report de conferência | `blacksmith_dre` |
 | app | `app_blacksmith_dre` |
 
 ---
@@ -105,25 +99,16 @@ Nomes dos itens (vêm do Git; só o workspace você escolhe):
 ## Estrutura do repositório
 
 ```
-dataset/                         # 7 CSVs da base fictícia (o nb_01 baixa daqui)
+dataset/                         # 7 CSVs da base fictícia (o refresh do modelo lê daqui)
 fabric-workspace/                # itens do workspace, sincronizados pela integração Git do Fabric
-  lh_blacksmith.Lakehouse/
-  nb_01_ingestao.Notebook/
-  nb_02_qualidade.Notebook/
-  nb_03_atualizar_modelo.Notebook/
-  pl_blacksmith_carga.DataPipeline/
-  sm_blacksmith_dre.SemanticModel/   # TMDL
-validacao/
-  gerar_referencias.py           # gera referencias.json a partir de dataset/
-  referencias.json               # gabarito (anual, mensal, Sankey, regiões)
-  validar_modelo.py              # roda as consultas de dax/ no modelo e compara
-  dax/v01..v06_*.dax
+  blacksmith_dre.SemanticModel/   # TMDL: Power Query, medidas e testes (_qualidade)
+  blacksmith_dre.Report/         # PBIR: report de conferência
 app_blacksmith_dre/              # Fabric App (Vite + React 19 + TypeScript)
   src/dados/                     # consultas DAX, construtor de filtros, layout do Sankey
   src/componentes/               # cabeçalho, filtros, KPIs, Sankey, tendência, regiões, DRE…
   src/estado/                    # filtros, tema e seleção cruzada
   src/tema/                      # tokens Carbon (CSS) e paleta dos gráficos (TS)
-  scripts/                       # conectar_modelo.mjs, validar_consultas.mjs, validate-visual.mjs
+  scripts/                       # conectar_modelo.mjs, capturar_fixtures.mjs, validate-visual.mjs
   rayfin/rayfin.yml              # configuração do item Rayfin
   fabric.example.yaml            # exemplo do fabric.yaml (conexão com o modelo, gerada por npm run conectar)
 docs/log_validacao.md            # registro das validações de cada fase
@@ -145,7 +130,7 @@ O `app_blacksmith_dre/README.md` é o README original do template da Microsoft. 
 | Papel **Admin** no workspace | Para conectar o workspace ao Git. Para publicar o app, Contributor já basta. |
 | Conta no **GitHub** | A integração Git do Fabric sincroniza o workspace com o seu fork do repositório. |
 | Workload **Fabric Apps** habilitado no tenant | Fabric Apps está em preview e precisa ser liberado pelo administrador. |
-| Configuração **Semantic Model Execute Queries REST API** habilitada (também aparece como *Dataset Execute Queries REST API*) | O app e os scripts de validação consultam o modelo por essa API. |
+| Configuração **Semantic Model Execute Queries REST API** habilitada (também aparece como *Dataset Execute Queries REST API*) | O app consulta o modelo por essa API. |
 | Permissões **Build** e **Read** no modelo para quem for usar o app | O app consulta o modelo com a identidade de quem está usando. |
 
 ### Na máquina de desenvolvimento
@@ -161,13 +146,7 @@ Confira com `node --version` e `git --version`.
 
 **O Rayfin não precisa ser instalado.** Rayfin é a ferramenta da Microsoft que cria e publica Fabric Apps. Ela é uma dependência do app (versão 1.36.2, em `app_blacksmith_dre/package.json`): o `npm install` baixa o Rayfin junto com o resto, e o `npx rayfin …` roda essa cópia local. Não use `npm install -g`.
 
-As ferramentas abaixo só são necessárias para rodar a [validação](#validação):
-
-| ferramenta | versão usada | para quê | instalação |
-|---|---|---|---|
-| uv + Python | 3.13 | scripts de `validacao/` | https://docs.astral.sh/uv/ |
-| Fabric CLI (`fab`) | 1.8 | `validar_modelo.py` consulta o modelo com o login do fab | `uv tool install --python 3.13 ms-fabric-cli` |
-| Azure CLI (`az`) | recente | token para `npm run validar:consultas` e `npm run validate:visual` | https://learn.microsoft.com/cli/azure/install-azure-cli |
+Opcionais: o **Azure CLI** (`az login`), só para o `npm run validate:visual`, e o **Power BI Desktop**, para abrir o modelo e o report localmente.
 
 ---
 
@@ -187,19 +166,17 @@ No portal do Fabric:
 2. Abra **Workspace settings → Git integration**, escolha **GitHub** e conecte ao seu fork:
    - branch: `main`;
    - pasta (*Git folder*): `fabric-workspace`.
-3. Confirme a sincronização. O Fabric cria o `lh_blacksmith`, os três notebooks, o `pl_blacksmith_carga` e o `sm_blacksmith_dre`.
+3. Confirme a sincronização. O Fabric cria o modelo semântico e o report de conferência, os dois com o nome `blacksmith_dre`.
 
-### 3. Rodar a carga
+### 3. Carregar o modelo
 
-Abra o `pl_blacksmith_carga` e clique em **Run**. O pipeline:
+O modelo é Import e chega do Git sem dados. Na primeira vez:
 
-1. `nb_01_ingestao`: baixa os CSVs de `dataset/` do GitHub para o lakehouse e grava as 8 tabelas Delta;
-2. `nb_02_qualidade`: roda os testes e termina com `qualidade ok`;
-3. `nb_03_atualizar_modelo`: liga o modelo ao lakehouse do seu workspace e faz o refresh.
+1. Abra as configurações do modelo semântico `blacksmith_dre` → **Data source credentials** → **Edit credentials** da fonte Web (`raw.githubusercontent.com`) → autenticação **Anonymous**, nível de privacidade **Public** → **Sign in**.
+2. Clique em **Refresh now**. O Power Query baixa os 7 CSVs de `dataset/` e o refresh falha se algum cabeçalho ou tipo não bater.
+3. Abra o report `blacksmith_dre`: a página **Qualidade** deve mostrar `testes_com_falha = 0`.
 
-O download usa o repositório original (parâmetro `url_dataset` do `nb_01`). Sem acesso ao GitHub, envie os 7 CSVs para `Files/Raw/blacksmith` no lakehouse e rode de novo: o notebook usa os arquivos que já estiverem lá.
-
-Opcional: nas configurações do `sm_blacksmith_dre`, desligue "Keep your Direct Lake data up to date". Assim o modelo só recebe dados novos depois que os testes de qualidade passam.
+O endereço dos CSVs é o parâmetro `url_dataset` do modelo (aponta para a branch `main` do repositório original). Para ler do seu fork, troque o parâmetro em **Settings → Parameters**. Se quiser, ligue o refresh agendado; a base é estática, então não é necessário.
 
 ### 4. Publicar o app
 
@@ -213,8 +190,8 @@ npm install
 # abre o navegador para entrar com a sua conta do Fabric
 npx rayfin login
 
-# liga o app ao modelo: abra o sm_blacksmith_dre no portal e copie a URL da barra de endereço
-npm run conectar -- "<URL do sm_blacksmith_dre>"
+# liga o app ao modelo: abra o modelo semântico blacksmith_dre no portal e copie a URL da barra de endereço
+npm run conectar -- "<URL do blacksmith_dre>"
 
 # faz o build e publica o app no workspace
 npx rayfin up --workspace <nome-do-workspace> --item-name app_blacksmith_dre
@@ -258,15 +235,19 @@ Este app não usa `rayfin connector`, `rayfin functions` nem `rayfin secret`. A 
 
 ## Validação
 
-| comando | onde | o que confere |
-|---|---|---|
-| `uv run validacao/gerar_referencias.py` | raiz | Regera `referencias.json` a partir dos CSVs (só se a base mudar). |
-| `uv run validacao/validar_modelo.py` | raiz | DRE anual e mensal, links do Sankey, fechamento dos nós, comparativos e regiões no modelo publicado. Usa a conexão do `fabric.yaml` do app e o login do fab CLI (`fab auth login`). |
-| `npm test` | app | Testes unitários (vitest). |
-| `npm run lint` | app | ESLint. |
-| `npm run build` | app | TypeScript e build de produção. |
-| `npm run validar:consultas` | app | Roda as consultas reais do app no modelo, incluindo os recortes de filtragem cruzada, e compara com o gabarito. Exige `az login`. |
-| `npm run validate:visual -- src/dados/visuais/tendencia.ts '<contexto-json>'` | app | Renderiza um gráfico sem navegador, com dados reais. Exige `az login`. |
+A conferência dos dados fica no modelo e no report:
+
+- **Tabela `_qualidade`** (calculada a cada refresh): 50 testes com esperado, obtido, tolerância e status. Contagens, chaves sem vazio nem duplicidade, integridade referencial, regras de sinal, estrutura e fechamento do Sankey (entrada = saída em cada nó, por mês, ano e região), DRE de referência, meses com prejuízo e os cenários de teste do Sankey.
+- **Report `blacksmith_dre`**: páginas Qualidade, DRE anual, Resultado mensal, Sankey (abre em mar/2025), Regiões e Operacional, para comparar com o app.
+
+No app:
+
+| comando | o que confere |
+|---|---|
+| `npm test` | Testes unitários (vitest). |
+| `npm run lint` | ESLint. |
+| `npm run build` | TypeScript e build de produção. |
+| `npm run validate:visual -- src/dados/visuais/tendencia.ts '<contexto-json>'` | Renderiza um gráfico sem navegador, com dados reais. Exige `az login`. |
 
 Números de referência (realizado, consolidado):
 
@@ -283,7 +264,7 @@ Roteiro de demonstração sugerido: seção 11 do [CLAUDE.md](CLAUDE.md).
 ## Segurança
 
 - **Sem `.env` e sem IDs à mão.** A conexão do app com o modelo fica no `fabric.yaml` do app (gerado por `npm run conectar`), e o `rayfin up` grava os dados do item em `rayfin/`. Nada disso é versionado.
-- **O que a integração Git versiona.** O `expressions.tmdl` do `sm_blacksmith_dre` guarda o endereço do OneLake (IDs do workspace e do lakehouse) do workspace que fez o commit. São identificadores, não credenciais, e o `nb_03` troca esse endereço pelo do seu workspace na primeira carga. Se o repositório for de um cliente, trate esses IDs como dado do ambiente dele.
+- **O que a integração Git versiona.** Só definições: nenhum ID de tenant, workspace ou item. A fonte do modelo é a URL pública de `dataset/` (parâmetro `url_dataset`), com credencial Anonymous configurada no serviço, fora do Git.
 - O `rayfin up` grava a URL de hospedagem do app no `rayfin/rayfin.yml`. Remova essa linha antes do commit, ou não faça commit desse arquivo depois de um deploy.
 - O app não guarda credenciais. A autenticação é a nativa do Fabric (Entra ID), e cada usuário consulta o modelo com a própria identidade.
 - Não cole dados reais de clientes em prompts, commits, issues ou logs.
@@ -296,7 +277,8 @@ Roteiro de demonstração sugerido: seção 11 do [CLAUDE.md](CLAUDE.md).
 - Apps ligados a modelo semântico só abrem **dentro do portal do Fabric**.
 - O teste `scripts/validate-visual.spec.mjs`, que vem do template, falha no vitest atual ("Cannot spy on export"). O script `validate:visual` em si funciona.
 - A `culture` do modelo é `en-US`, porque o serviço não deixa trocar o idioma de um modelo existente. Os formatos são explícitos (`R$`, `%`), e o app formata em pt-BR.
-- O plano B (relatório Power BI com visual Sankey do AppSource) está descrito na seção 10 do [CLAUDE.md](CLAUDE.md), mas não foi implementado.
+- O modelo Import chega do Git sem dados: depois de cada sincronização que mude tabelas ou Power Query, faça o refresh.
+- O plano B (relatório Power BI com visual Sankey do AppSource) está descrito na seção 10 do [CLAUDE.md](CLAUDE.md), mas não foi implementado. O report `blacksmith_dre` é só para conferência, não substitui o app.
 
 ---
 

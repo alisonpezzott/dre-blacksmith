@@ -94,3 +94,14 @@ Paleta e tipografia trocadas pelo IBM Carbon (escuro g100 padrão, claro g10 no 
 | 2026-10-23 | `rayfin up` em `ws_blacksmith_financeiro`, item `app_blacksmith_dre` (mesmo item) | publicado e saudável | publicado; `rayfin up status` Reachable | ok |
 | 2026-10-23 | No portal: tema escuro/claro em todos os visuais (inclusive Sankey, Vega e data grid) e persistência da escolha, contraste AA, cliques de filtragem cruzada (mar/2025, Ctrl+clique em abr/2025, Sudeste em abr/2025, Esc), visual de origem só esmaece | conforme seção 8.6 do CLAUDE.md | conferido no portal pelo dono do projeto, após a correção da tendência mensal | ok |
 | 2026-10-23 | Correção da tendência mensal: no portal a área de plotagem ficava com 0 px (linhas retas, um rótulo no eixo). O `VegaVisual` copia o `displayName` para todo canal sem `title`, camada a camada; o título concatenado do eixo esquerdo, girado, passava da altura do contêiner. `title: null` em cada `y` interno | eixo com vários rótulos, sem título | `renderVisualToSvg` com os metadados reais: R$ 5/10/15 mi e 0–10%, sem título; `tsc -b` e `npm run build` sem erros | ok |
+
+### Modelo Import, `_qualidade` e report de conferência (27/10/2026)
+
+Lakehouse, notebooks, pipeline e `validacao/` removidos. O modelo, agora `blacksmith_dre`, passou para Import: o Power Query lê `dataset/` do GitHub (`url_dataset` + `ler_csv`), e os testes do antigo `nb_02_qualidade` e do `validar_modelo.py` viraram a tabela calculada `_qualidade`. Novo report de conferência `blacksmith_dre` (PBIR; modelo e report com o mesmo nome). Seções 3, 5 e 6 do CLAUDE.md.
+
+| data | verificação | esperado | obtido | status |
+|---|---|---|---|---|
+| 2026-10-27 | DAX da `_qualidade` (com a medida `sankey_desequilibrio_max`) rodado como consulta no modelo publicado (Direct Lake, mesmos dados) | 0 falhas | 50 testes, 0 falhas | ok |
+| 2026-10-27 | `sankey_desequilibrio_max` não é trivial: a mesma lógica devolvendo a entrada do nó em mar/2025 | > 0 | R$ 13.840.145,77 | ok |
+| 2026-10-27 | Report: todos os campos referenciados existem no modelo; JSON válido | 0 faltando | 74 referências, 0 faltando | ok |
+| pendente | "Update all" no workspace, credencial Anonymous, refresh do modelo Import e abertura do report | refresh sem erro; `testes_com_falha = 0` | — | pendente |

@@ -51,7 +51,7 @@ import { PainelDetalheNo } from "./componentes/painel_detalhe_no";
 import { PainelOperacional } from "./componentes/painel_operacional";
 import { TabelaDre } from "./componentes/tabela_dre";
 
-/** O Direct Lake acrescenta um membro em branco às dimensões: descartar chaves vazias. */
+/** Uma chave órfã na fato cria um membro em branco na dimensão: descartar chaves vazias. */
 function sem_vazios(linhas: Linha[] | undefined, chave: string): Linha[] {
     return (linhas ?? []).filter((l) => texto(l, chave) !== "");
 }
@@ -284,7 +284,7 @@ export function PaginaPrincipal() {
     if (erro_dimensoes) {
         return (
             <Moldura carga={carga}>
-                <EstadoErro erro={erro_dimensoes} titulo="Não foi possível ler as dimensões do modelo sm_blacksmith_dre" />
+                <EstadoErro erro={erro_dimensoes} titulo="Não foi possível ler as dimensões do modelo blacksmith_dre" />
             </Moldura>
         );
     }

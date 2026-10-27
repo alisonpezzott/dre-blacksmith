@@ -1,7 +1,7 @@
 # CLAUDE.md — Blacksmith | DRE em Sankey no Microsoft Fabric
 
 > Instruções do projeto para o Claude (Claude Code) executar a implantação de ponta a ponta:
-> ingestão → tratamento → modelo semântico → medidas DAX → Fabric App (IBM Carbon, tema escuro padrão e tema claro, com filtragem cruzada).
+> modelo semântico Import (Power Query + DAX + testes) → report de conferência → Fabric App (IBM Carbon, tema escuro padrão e tema claro, com filtragem cruzada).
 > Leia este arquivo inteiro antes de executar qualquer fase. Execute uma fase por vez e valide antes de avançar.
 
 ---
@@ -15,7 +15,7 @@
   - mar/2025: R$ 4,8 mi → a Blacksmith fecha o mês com **prejuízo de R$ 2,59 mi** (o EBITDA zera);
   - abr/2025: R$ 2,6 mi → **prejuízo de R$ 0,61 mi** (só o Sudeste fica negativo; as outras regiões lucram);
   - 70% do evento no Sudeste; o ano de 2025 continua lucrativo (R$ 13,09 mi).
-- **Arquivos de origem:** os 7 CSVs em `dataset/`. O gabarito de conferência é `validacao/referencias.json`.
+- **Arquivos de origem:** os 7 CSVs em `dataset/`, lidos pelo refresh do modelo direto do GitHub. Os números de referência abaixo são testes da tabela `_qualidade` do modelo (seção 6).
 
 ### Números de referência (realizado, consolidado) — usar para validar cada fase
 
@@ -28,7 +28,7 @@
 | lucro_liquido | 15.882.255,48 | 13.088.163,15 | 24.560.318,22 |
 | margem_liquida | 11,7% | 8,5% | 14,0% |
 
-Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) estão em `validacao/referencias.json`, gerado a partir de `dataset/` por `uv run validacao/gerar_referencias.py`. Diferença tolerada: R$ 1,00.
+Esses valores são testes da tabela `_qualidade` (seção 6). Diferença tolerada: R$ 1,00.
 
 ### Cenários de teste do Sankey (realizado, todas as regiões)
 
@@ -50,7 +50,7 @@ Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) es
 
 1. **Idioma:** português do Brasil em tudo (tabelas, colunas, medidas, pastas, textos da UI, comentários de código).
 2. **Nomenclatura:** `snake_case` em todos os identificadores: itens do workspace, tabelas, colunas, medidas, pastas de exibição, arquivos, variáveis, componentes e funções do app. Rótulos de exibição para o usuário final ficam nas colunas `nome_*` (com acentos).
-3. **Prefixos:** `dim_` dimensões, `fato_` fatos, `nb_` notebooks, `sm_` modelo semântico, `lh_` lakehouse, `app_` app, `ws_` workspace.
+3. **Prefixos:** `dim_` dimensões, `fato_` fatos, `app_` app, `ws_` workspace. O modelo semântico e o report de conferência têm o mesmo nome, `blacksmith_dre`, sem prefixo (o tipo do item já os distingue).
 4. **Segurança de dados:** nunca colar, versionar ou enviar dados reais de clientes em prompts, commits ou logs. Este projeto usa apenas dados fictícios. Se for adaptado para um cliente real, mascarar/anonimizar antes e seguir a política da Power Tuning.
 5. **Sankey dinâmico:** o valor de cada link é sempre calculado pela medida `sankey_valor` sobre os valores já agregados do filtro. Nunca somar links pré‑calculados por mês ou região, porque um mês com prejuízo somado a meses com lucro (ou uma região negativa somada a regiões positivas) mostraria lucro e prejuízo ao mesmo tempo.
 6. **Sem mock no app:** o app consome somente o modelo semântico. Se uma query falhar, mostrar estado de erro, nunca dados fictícios embutidos.
@@ -63,19 +63,15 @@ Os valores exatos (anual, mês a mês, Sankey e regiões, nos dois cenários) es
 
 ## 3. Arquitetura
 
+Toda a engenharia fica dentro do modelo semântico: sem lakehouse, notebook ou pipeline.
+
 ```
-CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
-                 │  nb_01_ingestao                     ┐
-                 ▼                                     │
-            tabelas delta (lh_blacksmith/Tables)       │
-            dim_calendario, dim_conta, dim_regiao,     │ pl_blacksmith_carga
-            dim_cenario, dim_no_sankey,                │
-            dim_link_sankey, fato_lancamentos,         │
-            fato_operacional                           │
-                 │  nb_02_qualidade (testes)           │
-                 │  nb_03_atualizar_modelo (refresh)   ┘
+dataset/*.csv (GitHub, raw.githubusercontent.com)
+                 │  refresh: Power Query (url_dataset + ler_csv)
                  ▼
-            sm_blacksmith_dre  (Direct Lake on OneLake, medidas DAX)
+            blacksmith_dre  (Import, medidas DAX, tabela _qualidade)
+                 │                       │
+                 │                       └──► blacksmith_dre (report PBIR)
                  │  Execute DAX Queries API (fabric-app-data)
                  ▼
             app_blacksmith_dre (Fabric App, template dataapp, TypeScript)
@@ -84,22 +80,19 @@ CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
 | item | nome |
 |---|---|
 | workspace | `ws_blacksmith_financeiro` (capacidade Fabric) |
-| lakehouse | `lh_blacksmith` |
-| notebooks | `nb_01_ingestao`, `nb_02_qualidade`, `nb_03_atualizar_modelo` |
-| pipeline | `pl_blacksmith_carga` (nb_01 → nb_02 → nb_03) |
-| modelo semântico | `sm_blacksmith_dre` |
+| modelo semântico | `blacksmith_dre` |
+| report de conferência | `blacksmith_dre` |
 | fabric app | `app_blacksmith_dre` |
 
-**Workspace sincronizado pelo Git.** A pasta oficial dos itens é `fabric-workspace/`, ligada ao workspace pela integração Git do Fabric (GitHub). Quem reproduz o projeto faz o fork, conecta o próprio workspace à pasta e roda o `pl_blacksmith_carga`; não há `.env` nem ID copiado à mão. Para os itens funcionarem em qualquer workspace:
+**Workspace sincronizado pelo Git.** A pasta oficial dos itens é `fabric-workspace/`, ligada ao workspace pela integração Git do Fabric (GitHub). Quem reproduz o projeto faz o fork, conecta o próprio workspace à pasta, configura a credencial **Anonymous** da fonte Web do modelo e faz o refresh. Não há `.env` nem ID versionado:
 
-- os notebooks acham o `lh_blacksmith` pelo nome (`%%configure` com `defaultLakehouse.name`), sem ID de lakehouse nos metadados;
-- o `nb_01` baixa os CSVs de `dataset/` do GitHub (parâmetro `url_dataset`) e, se o download falhar, usa os arquivos que já estiverem no lakehouse;
-- o `nb_03` religa a expressão Direct Lake ao lakehouse do próprio workspace (`getDefinition`/`updateDefinition`) antes do refresh;
-- o pipeline aponta os notebooks por `logicalId`, que a integração resolve em cada workspace.
+- o modelo lê os CSVs pelo parâmetro `url_dataset` (repositório público), com `Web.Contents` + `RelativePath` para o serviço aceitar o refresh;
+- o report aponta para o modelo por caminho (`definition.pbir`, `byPath`), que a integração resolve em cada workspace;
+- o modelo Import chega do Git sem dados: depois de sincronizar mudanças de tabela ou Power Query, fazer o refresh.
 
-O único ID de ambiente versionado é o endereço do OneLake em `expressions.tmdl`, que a integração exige para sincronizar o workspace de origem. Para mudar um item: editar no portal e fazer commit pela integração, ou editar em `fabric-workspace/`, fazer push e usar "Update all" no workspace. A conexão do app com o modelo fica em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
+Para mudar um item: editar no portal e fazer commit pela integração, ou editar em `fabric-workspace/`, fazer push e usar "Update all" no workspace. A conexão do app com o modelo fica em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
 
-A pasta `fabric/` do formato anterior (marcadores `{{ID_*}}`, `ids_ambiente.py` e `fab import`) foi removida em 27/10/2026.
+Histórico: até 27/10/2026 o projeto tinha lakehouse (`lh_blacksmith`), três notebooks (`nb_01_ingestao`, `nb_02_qualidade`, `nb_03_atualizar_modelo`), o pipeline `pl_blacksmith_carga`, o modelo em Direct Lake on OneLake e a pasta `validacao/` (gabarito `referencias.json` e scripts Python). Tudo foi substituído pelo modelo Import, pela `_qualidade` e pelo report.
 
 ---
 
@@ -112,88 +105,101 @@ A pasta `fabric/` do formato anterior (marcadores `{{ID_*}}`, `ids_ambiente.py` 
   - [x] Configuração de integração **Semantic Model Execute Queries REST API** (pode aparecer como *Dataset Execute Queries REST API*) habilitada.
 - [x] Node.js 20 ou superior e npm na máquina de desenvolvimento (usado: v24).
 - [x] Workspace conectado ao Git (GitHub, pasta `fabric-workspace`).
-- [x] Python 3.13 + `uv`; fab CLI ≥ 1.8 (`uv tool install --python 3.13 ms-fabric-cli`): só para `validacao/validar_modelo.py`.
-- [ ] Azure CLI logado (`az login`): exigido por `npm run validar:consultas` e `npm run validate:visual`.
+- [ ] Azure CLI logado (`az login`): exigido por `npm run validate:visual`.
+- [ ] Credencial **Anonymous** (privacidade Public) da fonte Web `raw.githubusercontent.com` no `blacksmith_dre`.
 - [x] VS Code com o Claude Code.
-- [ ] Usuários finais com permissões **Build** e **Read** no `sm_blacksmith_dre` (adiado: por enquanto só o dono usa o app).
+- [ ] Usuários finais com permissões **Build** e **Read** no `blacksmith_dre` (adiado: por enquanto só o dono usa o app).
 
 > Fabric Apps está em preview. Versões usadas: Rayfin CLI 1.36.2, `@microsoft/fabric-app-data` 1.1.0,
 > `@microsoft/fabric-visuals` 4.2.0. Em versões novas, confira https://learn.microsoft.com/fabric/apps/ e `npx rayfin --help`.
 
 ---
 
-## 5. Fase 1 — Ingestão (`nb_01_ingestao`)
+## 5. Fase 1 — Carga no modelo (Power Query)
 
-### 5.1 Upload
-1. O lakehouse `lh_blacksmith` (com schemas; tabelas em `dbo`) vem da integração Git.
-2. O `nb_01` baixa os 7 CSVs de `dataset/` do GitHub (`url_dataset`) para `Files/Raw/blacksmith/` (`caminho_raw`; o OneLake diferencia maiúsculas). Se o download falhar (repositório privado, sem rede), usa os CSVs que já estiverem nessa pasta.
+### 5.1 Fonte
+O refresh do modelo `blacksmith_dre` baixa os 7 CSVs de `dataset/` do GitHub. Duas expressões compartilhadas em `expressions.tmdl`:
+
+- `url_dataset` (parâmetro, texto): `https://raw.githubusercontent.com/alisonpezzott/dre-blacksmith/main/dataset`. Para ler de um fork, trocar o parâmetro no serviço.
+- `ler_csv(arquivo, tipos)` (função): `Web.Contents(url_dataset, [RelativePath = arquivo & ".csv"])` → `Csv.Document` UTF-8 → cabeçalho → confere se as colunas são exatamente as esperadas → `Text.Trim` em tudo → tipos com cultura `en-US` → **falha o refresh** se alguma linha tiver valor que não converte (o equivalente ao antigo `FAILFAST`).
 
 ### 5.2 Dicionário de dados
 
 | tabela | colunas (tipo) | grão |
 |---|---|---|
-| `dim_calendario` | data (date), ano (int), mes (int), indice_mes (int, gerado no `nb_01`), nome_mes (string), ano_mes (string), mes_ano (string), trimestre (string), ano_trimestre (string), semestre (string) | 1 linha por mês |
+| `dim_calendario` | data (date), ano (int), mes (int), indice_mes (int, gerado no Power Query), nome_mes (string), ano_mes (string), mes_ano (string), trimestre (string), ano_trimestre (string), semestre (string) | 1 linha por mês |
 | `dim_conta` | cod_conta, nome_conta, cod_grupo, nome_grupo, natureza (receita/despesa) (string), ordem_dre (int) | 19 contas |
 | `dim_regiao` | cod_regiao, nome_regiao, ufs, escritorio (string) | 5 regiões |
 | `dim_no_sankey` | cod_no, nome_no, tipo_no (receita/total/custo/lucro/prejuizo), cor_hex (string), coluna_sankey (int) | 30 nós |
 | `dim_link_sankey` | cod_link, cod_no_origem, cod_no_destino, cod_conta, tipo_link (conta/subtotal/prejuizo) (string), etapa, ordem_link (int) | 33 links possíveis |
-| `dim_cenario` | cod_cenario, nome_cenario (string), ordem_cenario (int) — criada no `nb_01` | 2 cenários |
-| `fato_lancamentos` | data (date), cod_regiao, cod_conta, cenario (string), valor, valor_dre (decimal(18,2)), data_hora_carga (timestamp, horário de Brasília, gerado no `nb_01`) | mês × região × conta × cenário (6.484 linhas; contas zeradas não têm linha) |
+| `dim_cenario` | cod_cenario, nome_cenario (string), ordem_cenario (int) — tabela fixa no Power Query (`#table`) | 2 cenários |
+| `fato_lancamentos` | data (date), cod_regiao, cod_conta, cenario (string), valor, valor_dre (double), data_hora_carga (datetime, horário de Brasília, gerado no Power Query) | mês × região × conta × cenário (6.484 linhas; contas zeradas não têm linha) |
 | `fato_operacional` | data (date), cod_regiao (string), clientes_ativos, novos_clientes, headcount, nps, contratos_fechados (int), churn_pct (double) | mês × região, só realizado (180 linhas) |
 
 Regras de sinal: `valor` sempre positivo; `valor_dre` positivo para receita e negativo para despesa.
 
-`dim_link_sankey` não tem valores: lista todos os links que podem existir. `cod_conta` preenchido = link folha (valor direto da conta); vazio = link de subtotal ou de prejuízo, calculado pela cascata da seção 7.3.
+`dim_link_sankey` não tem valores: lista todos os links que podem existir. `cod_conta` preenchido = link folha (valor direto da conta); vazio (`""`, nunca nulo) = link de subtotal ou de prejuízo, calculado pela cascata da seção 7.3.
 
-### 5.3 Código do notebook
+### 5.3 Regras do Power Query
 
-Implementado em `fabric-workspace/nb_01_ingestao.Notebook/notebook-content.py` (formato Git do Fabric). Regras:
-
-- Primeira célula `%%configure` com o lakehouse só pelo nome (seção 3). Nas células markdown do `.py`, não deixar linha só com `#`: o Fabric junta essa linha com a seguinte e cria títulos.
-
-- Schema DDL explícito por tabela, **na ordem do cabeçalho do CSV** (a ordem dos CSVs de `dim_link_sankey`, `dim_no_sankey` e `fato_operacional` difere da ordem do dicionário), com `mode=FAILFAST` (valor que não converte derruba a leitura em vez de virar nulo) e `enforceSchema=false` (confere os nomes do cabeçalho).
-- `trim` das colunas de texto num único `select`; `dim_link_sankey.cod_conta` nulo vira `""`.
-- V-Order ligado (`spark.sql.parquet.vorder.default`), porque as tabelas são lidas em Direct Lake.
-- `dim_calendario.indice_mes = (ano − 2024) × 12 + mes`; `fato_lancamentos.data_hora_carga` = um único timestamp da carga (Brasília).
-- Gravação Delta `overwrite` + `overwriteSchema` (recarga completa e idempotente de base pequena e derivável); `dim_cenario` criada no próprio notebook.
-- A última célula relê as 8 tabelas e faz `assert` das contagens da seção 5.2.
+- Cada partição chama `ler_csv` com a lista `{coluna, tipo}` **na ordem do cabeçalho do CSV**; tabela sem fonte (`dim_cenario`) é `#table` tipado.
+- `dim_calendario.indice_mes = (ano − 2024) × 12 + mes`, coluna adicionada no M.
+- `fato_lancamentos.data_hora_carga` = um único momento do refresh (`DateTimeZone.UtcNow()` em UTC−3), guardado numa variável do `let` antes do `Table.AddColumn`.
 
 `indice_mes` (1 a 36) é a chave das comparações com o ano anterior e dos acumulados, porque o calendário é mensal e não diário.
 
 ### Pronto quando
-- [x] 8 tabelas delta criadas (7 CSVs + `dim_cenario`), com as contagens da seção 5.2.
-- [x] Tipos corretos (sem `string` em colunas numéricas/data).
+- [ ] Refresh no serviço sem erro, com a credencial Anonymous configurada.
+- [ ] Contagens da seção 5.2 (testes 1 a 8 da `_qualidade`).
 
 ---
 
-## 6. Fase 2 — Tratamento e qualidade (`nb_02_qualidade`)
+## 6. Fase 2 — Qualidade (`_qualidade`) e report de conferência
 
-Testes obrigatórios. O notebook deve **falhar** (`assert`) se algum não passar. Implementado em `fabric-workspace/nb_02_qualidade.Notebook/notebook-content.py`: cada teste registra a falha e a última célula faz um único `assert` com a lista completa; se tudo passar, imprime `qualidade ok`.
+### 6.1 Tabela calculada `_qualidade`
+Substitui o antigo `nb_02_qualidade`. Recalculada a cada refresh, uma linha por teste: `ordem`, `grupo`, `teste`, `esperado`, `obtido`, `tolerancia`, `diferenca`, `status` (`falha` quando |obtido − esperado| > tolerância; obtido vazio conta como 0). A medida `testes_com_falha`, na própria `_qualidade`, deve ser 0.
 
-1. Contagens da seção 5.2; sem nulos nas chaves; chaves das dimensões e grão das duas fatos sem duplicidade.
-2. Integridade referencial: as relações do modelo (seção 7.2), `data` das fatos → `dim_calendario`, e os nós e contas de `dim_link_sankey`.
-3. **Link folha para toda conta de grupo com 2 ou mais contas.** D&A, resultado financeiro e IR/CSLL são contas únicas no grupo: o nó do grupo é o terminal do Sankey e é alimentado pelos links de subtotal e de prejuízo (a versão anterior deste teste exigia link folha para todas as contas e falhava nessas três).
-4. Lucro líquido realizado 2024/2025/2026 com tolerância de R$ 1.
-5. Meses com prejuízo consolidado: só 2025-03 e 2025-04 no realizado; nenhum no orçado.
+| grupo | testes |
+|---|---|
+| `contagens` | linhas das 8 tabelas (seção 5.2) |
+| `chaves` | chaves das dimensões sem vazio e sem duplicidade; grão das duas fatos |
+| `integridade` | fatos sem data, região, conta ou cenário nas dimensões; nós e contas de `dim_link_sankey` |
+| `sankey` | link folha para toda conta de grupo com 2 ou mais contas (D&A, resultado financeiro e IR/CSLL são contas únicas: o nó do grupo é o terminal); `cod_link = origem__destino`; fechamento dos nós (entrada = saída) por mês × cenário, mês × cenário × região e ano × cenário, pela medida `sankey_desequilibrio_max` (tolerância R$ 0,05) |
+| `sinal` | `valor ≥ 0`; `valor_dre` coerente com `dim_conta.natureza` |
+| `dre_realizado` | receita líquida, EBITDA e lucro líquido realizado 2024/2025/2026 (seção 1, tolerância R$ 1) |
+| `prejuizo` | só 2025-03 e 2025-04 com prejuízo consolidado no realizado; nenhum no orçado |
+| `sankey_cenarios` | a tabela "Cenários de teste do Sankey" da seção 1 |
 
-Também verifica: ordenação (cada rótulo com um único valor de `sortByColumn`), regras de sinal (`valor ≥ 0`; `valor_dre` coerente com `dim_conta.natureza`), estrutura do Sankey (`cod_link = origem__destino`, `tipo_link`, nós sem link, links que não avançam de coluna) e faixas do operacional.
+Um teste que falha não derruba o refresh (é tabela calculada); quem garante a carga é o `ler_csv`. Conferir a `_qualidade` depois de todo refresh.
+
+### 6.2 Report `blacksmith_dre`
+PBIR em `fabric-workspace/blacksmith_dre.Report/`, ligado ao modelo por `byPath`, tema base Fluent 2. Serve só para conferência (não é o Plano B):
+
+| página | conteúdo |
+|---|---|
+| Qualidade | `testes_com_falha`, `data_ultima_carga` e a tabela `_qualidade` |
+| DRE anual | subtotais por ano × cenário; matriz das contas por ano e cenário |
+| Resultado mensal | DRE por mês, ano anterior e orçado |
+| Sankey | links com `sankey_valor`, valor do ano anterior e `sankey_desequilibrio_max` (abre em mar/2025) |
+| Regiões | DRE e meses com prejuízo por região |
+| Operacional | indicadores operacionais por região |
+
+Nas páginas com segmentador de cenário, ele é de seleção única e começa em Realizado: sem esse filtro, as medidas da DRE somariam realizado e orçado.
 
 ### Pronto quando
-- [x] `nb_02_qualidade` imprime `qualidade ok`.
-- [x] Lucro líquido realizado 2024 = 15.882.255,48 e 2025 = 13.088.163,15.
-- [x] Apenas mar/2025 e abr/2025 aparecem com prejuízo consolidado.
-- [x] Pipeline `pl_blacksmith_carga`: `nb_01_ingestao` → `nb_02_qualidade` → `nb_03_atualizar_modelo` (refresh do modelo com semantic link, só se a qualidade passar). Com "Keep your Direct Lake data up to date" desligado no modelo, o reenquadramento só acontece depois dos testes.
+- [x] Os 50 testes da `_qualidade` passam (`testes_com_falha = 0`): conferido em 27/10/2026 rodando o DAX da tabela como consulta no modelo publicado.
+- [ ] Report abre no serviço e no Power BI Desktop sem visual quebrado.
 
 ---
 
-## 7. Fase 3 — Modelo semântico (`sm_blacksmith_dre`)
+## 7. Fase 3 — Modelo semântico (`blacksmith_dre`)
 
 ### 7.1 Criação
-- Criar a partir do `lh_blacksmith` em modo **Direct Lake on OneLake** (expressão `AzureStorage.DataLake`), incluindo as 8 tabelas. É o tipo recomendado pela Microsoft para modelos novos e o que aceita a tabela calculada `_medidas`.
-- Definição versionada em `fabric-workspace/sm_blacksmith_dre.SemanticModel/` (TMDL), sincronizada pela integração Git; num workspace novo, o `nb_03` religa a expressão ao lakehouse local (seção 3). A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
+- Modo **Import**, com as 8 tabelas carregadas pelo Power Query (seção 5) e as tabelas calculadas `_medidas` e `_qualidade`.
+- Definição versionada em `fabric-workspace/blacksmith_dre.SemanticModel/` (TMDL), sincronizada pela integração Git. A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
 - Fatos com todas as colunas ocultas (expor somente medidas); nas dimensões, ocultar as chaves `cod_*` usadas em relacionamento, `cod_grupo` e `indice_mes`. `dim_no_sankey` e `dim_link_sankey` ficam visíveis (Plano B). `discourageImplicitMeasures` ligado.
 - Ordenar colunas: `dim_calendario[mes_ano]` por `indice_mes`; `dim_calendario[nome_mes]` por `mes`; `dim_conta[nome_conta]` por `ordem_dre`; `dim_cenario[nome_cenario]` por `ordem_cenario`.
-- No modelo, `fato_lancamentos[valor]` e `[valor_dre]` são `double` (no lakehouse, `decimal(18,2)`); os relacionamentos por `data` usam `joinOnDateBehavior: datePartOnly`.
+- `fato_lancamentos[valor]` e `[valor_dre]` são `double`; os relacionamentos por `data` usam `joinOnDateBehavior: datePartOnly`.
 
 ### 7.2 Relacionamentos (todos 1:N, filtro em direção única)
 
@@ -208,7 +214,7 @@ Também verifica: ordenação (cada rótulo com um único valor de `sortByColumn
 
 ### 7.3 Medidas DAX
 
-As 53 medidas ficam na tabela calculada `_medidas` (`source = { 0 }`, coluna `Value` oculta), com as pastas de exibição indicadas. Todas as medidas da DRE respeitam o filtro de `dim_cenario`; as medidas `_realizado`/`_orcado` forçam o cenário.
+As 54 medidas ficam na tabela calculada `_medidas` (`source = { 0 }`, coluna `Value` oculta), com as pastas de exibição indicadas. Todas as medidas da DRE respeitam o filtro de `dim_cenario`; as medidas `_realizado`/`_orcado` forçam o cenário.
 
 **Pasta `01_dre`** — formato `\R\$ #,##0;(\R\$ #,##0);-`
 
@@ -388,7 +394,7 @@ RETURN
 -- esperado: nenhuma linha
 ```
 
-**Medidas adicionais para a Fase 4** (o app só consome o modelo; definição completa em `fabric-workspace/sm_blacksmith_dre.SemanticModel/definition/tables/_medidas.tmdl`):
+**Medidas adicionais para a Fase 4** (o app só consome o modelo; definição completa em `fabric-workspace/blacksmith_dre.SemanticModel/definition/tables/_medidas.tmdl`):
 
 | pasta | medidas | formato |
 |---|---|---|
@@ -396,13 +402,14 @@ RETURN
 | `03_comparativos` | `var_lucro_bruto_aa_pct`, `var_ebitda_aa_pct` | `+0.0%;-0.0%;0.0%` |
 | `03_comparativos` | `var_margem_liquida_aa_pp` (diferença em pontos percentuais) | `+0.0 \p\.\p\.;-0.0 \p\.\p\.;0.0 \p\.\p\.` |
 | `05_sankey` | `sankey_valor_aa`, `var_sankey_valor_aa_pct` (tooltip do Sankey) | R$ / `+0.0%;-0.0%;0.0%` |
-| `06_carga` | `data_ultima_carga` (máximo de `data_hora_carga`, sem filtros) | `dd/MM/yyyy HH:mm` |
+| `06_carga` | `data_ultima_carga` (máximo de `data_hora_carga`, sem filtros: momento do último refresh) | `dd/MM/yyyy HH:mm` |
+| `07_qualidade` | `sankey_desequilibrio_max` (maior diferença entre entrada e saída de um nó no contexto; esperado 0) | `\R\$ #,##0.00` |
 
 **Guarda das medidas `_aa`:** todas (inclusive `receita_liquida_aa` e `lucro_liquido_aa`) ficam vazias quando algum mês do contexto não tem o mesmo mês do ano anterior no calendário. Sem isso, o filtro "todos os anos" compararia 36 meses com 24.
 
-**Membro em branco:** o Direct Lake acrescenta um membro em branco às dimensões. Consultas que forçam valor (`+ 0`) ou iteram `VALUES` mostram uma linha extra com chave vazia; usar `DISTINCT` ou deixar o `SUMMARIZECOLUMNS` remover os vazios.
+**Membro em branco:** no Import, uma dimensão só ganha membro em branco se a fato tiver chave órfã (o teste de integridade da `_qualidade` acusa). Mesmo assim, consultas que iteram dimensões usam `DISTINCT` ou deixam o `SUMMARIZECOLUMNS` remover os vazios.
 
-**Validação automatizada:** `uv run validacao/validar_modelo.py` roda as consultas de `validacao/dax/` (v01 a v06) pela API `executeQueries` e compara com `validacao/referencias.json`; a v04 generaliza a query acima para todos os recortes (mês e ano × cenário, consolidado e por região).
+**Validação automatizada:** os testes 33 a 35 da `_qualidade` (seção 6) generalizam a query acima para todos os recortes (mês e ano × cenário, consolidado e por região).
 
 ### Pronto quando
 - [x] Com `dim_cenario = realizado` e `ano = 2024`: `lucro_liquido` = 15.882.255,48 e `margem_liquida` = 11,7%.
@@ -410,7 +417,7 @@ RETURN
 - [x] `receita_liquida_aa` em 2025 = `receita_liquida` em 2024.
 - [x] Nenhuma medida retorna erro em um visual de tabela por `mes_ano`.
 - [ ] Modelo compartilhado com Build + Read para os usuários do app (adiado).
-- [x] Conexão do app com o modelo em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`; `validar_modelo.py` lê os IDs desse arquivo.
+- [x] Conexão do app com o modelo em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`.
 
 ---
 
@@ -423,9 +430,9 @@ npm create @microsoft/rayfin@latest -- "app_blacksmith_dre" --template dataapp
 cd app_blacksmith_dre
 npm install
 npx rayfin login
-# conexão com o modelo a partir da URL do sm_blacksmith_dre no portal
+# conexão com o modelo a partir da URL do blacksmith_dre no portal
 # (scripts/conectar_modelo.mjs: gera fabric.yaml, fora do git, e src/fabric.generated.ts)
-npm run conectar -- "<URL do sm_blacksmith_dre>"
+npm run conectar -- "<URL do blacksmith_dre>"
 npm run build
 ```
 
@@ -476,7 +483,6 @@ src/
   *.spec.ts                    # testes vitest ao lado de cada módulo
 scripts/
   conectar_modelo.mjs          # npm run conectar: grava o fabric.yaml a partir da URL do modelo
-  validar_consultas.mjs        # roda as consultas reais do app e compara com validacao/referencias.json
   capturar_fixtures.mjs        # grava as fixtures dos testes
 ```
 
@@ -646,7 +652,7 @@ Barras do valor mensal (contorno vermelho nos meses de prejuízo) e linha roxa t
 Regras: verificar o `status` de cada resposta antes de passar colunas e linhas aos visuais; disparar as queries em paralelo; não duplicar queries.
 
 ### 8.6 Deploy e distribuição
-- Validar localmente: `npm run build`, `npm test`, `npm run lint`, `npm run validate:visual -- <fábrica.ts> <contexto-json>` (render headless dos specs com dados reais) e `npm run validar:consultas` (consultas reais × `validacao/referencias.json`). Os dois últimos exigem `az login`.
+- Validar localmente: `npm run build`, `npm test`, `npm run lint` e `npm run validate:visual -- <fábrica.ts> <contexto-json>` (render headless dos specs com dados reais; exige `az login`). Os números do app se conferem com o `blacksmith_dre` no mesmo recorte.
 - Publicar: `npx rayfin up --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre` e conferir com `npx rayfin up status --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre`. O deploy grava `rayfin/.deployments.json` e `rayfin/.env` (fora do git) e acrescenta a URL de hospedagem em `rayfin.yml` (não versionar).
 - Desenvolvimento: `npm run dev` (o `predev` roda `rayfin env`, que lê o `rayfin/.env` criado pelo primeiro `rayfin up`); abrir o item no portal com `&devUri=http://localhost:5173` no fim da URL.
 - Limitação atual do preview: apps ligados a modelo semântico só funcionam abertos dentro do portal do Fabric.
@@ -654,8 +660,8 @@ Regras: verificar o `status` de cada resposta antes de passar colunas e linhas a
 
 ### Pronto quando
 - [x] Build sem erros; `validate:visual` e testes unitários ok (só o teste do template `validate-visual.spec.mjs` falha, como no template).
-- [x] KPIs batem com `validacao/referencias.json` para 2024, 2025 e 2026.
-- [x] Sankey fecha (entrada = saída em cada nó) nos recortes de mês e ano × cenário, consolidado e por região (`validar:consultas`).
+- [x] KPIs batem com os números da seção 1 para 2024, 2025 e 2026.
+- [x] Sankey fecha (entrada = saída em cada nó) nos recortes de mês e ano × cenário, consolidado e por região (testes 33 a 35 da `_qualidade`).
 - [x] mar/2025 e abr/2025 mostram o nó de prejuízo com os valores da seção 1; o ano de 2025 inteiro não mostra.
 - [x] abr/2025 só Sudeste: prejuízo; abr/2025 só Sul: lucro.
 - [x] Trocar o cenário para orçado atualiza todos os visuais.
@@ -665,7 +671,6 @@ Regras: verificar o `status` de cada resposta antes de passar colunas e linhas a
 - [x] Contraste AA nos dois temas (texto ≥ 4,5:1; marcas de gráfico ≥ 3:1).
 - [x] Filtragem cruzada: em 2025, clicar em mar/2025 na tendência mostra o prejuízo de R$ 2,59 mi nos KPIs e o nó de prejuízo no Sankey; Ctrl+clique em abr/2025 soma os dois meses; clicar no Sudeste com abr/2025 selecionado na barra mostra prejuízo; Esc limpa.
 - [x] O visual de origem não se filtra (só esmaece) e a seleção some ao mudar um filtro da barra ou ao selecionar em outro visual.
-- [x] `npm run validar:consultas` sem falhas (inclui os recortes de filtragem cruzada).
 
 ---
 
@@ -727,9 +732,9 @@ A coluna `dim_no_sankey[cor_hex]` ainda guarda a paleta antiga (neon) e só serv
 
 ## 10. Plano B — relatório Power BI (low‑code)
 
-Se o Fabric App não estiver liberado no tenant, publicar um relatório `rpt_blacksmith_dre` sobre o mesmo `sm_blacksmith_dre` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4, a filtragem cruzada nativa do Power BI (mesmos papéis da seção 8.4.1: Sankey só destaca) e dois temas JSON (escuro g100 e claro g10) com as cores e a fonte IBM Plex da seção 9. Distribuir via org app.
+Se o Fabric App não estiver liberado no tenant, publicar um relatório (por exemplo, `blacksmith_dre_sankey`) sobre o mesmo modelo `blacksmith_dre` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4, a filtragem cruzada nativa do Power BI (mesmos papéis da seção 8.4.1: Sankey só destaca) e dois temas JSON (escuro g100 e claro g10) com as cores e a fonte IBM Plex da seção 9. Distribuir via org app.
 
-Não implementado: o Fabric App foi liberado no tenant, e o repositório não tem relatório nem temas JSON.
+Não implementado: o Fabric App foi liberado no tenant. O report `blacksmith_dre` (seção 6.2) não é o Plano B: só tabelas para conferência, sem Sankey nem temas.
 
 ---
 
@@ -748,9 +753,9 @@ Não implementado: o Fabric App foi liberado no tenant, e o repositório não te
 ## 12. Ordem de execução para o Claude
 
 1. Confirmar com o usuário os pré‑requisitos da Fase 0 (não é possível checar o tenant sozinho).
-2. Os notebooks `nb_01_ingestao`, `nb_02_qualidade` e `nb_03_atualizar_modelo` e o pipeline `pl_blacksmith_carga` ficam em `fabric-workspace/` (formato Git do Fabric), portáveis entre workspaces (seção 3). Depois do push, o workspace recebe as mudanças com "Update all"; a carga roda pelo `pl_blacksmith_carga`.
-3. As medidas da seção 7.3 ficam em TMDL em `fabric-workspace/sm_blacksmith_dre.SemanticModel/`; depois do "Update all", rodar o pipeline (ou o `nb_03`) para o refresh.
+2. Carga, medidas e testes ficam em TMDL em `fabric-workspace/blacksmith_dre.SemanticModel/`; o report, em PBIR em `fabric-workspace/blacksmith_dre.Report/`. Depois do push, o workspace recebe as mudanças com "Update all"; em seguida, refresh do modelo.
+3. Mudou tabela, coluna ou Power Query: conferir que a `_qualidade` continua com 0 falhas e que o report não referencia campo removido.
 4. Fazer o scaffold do app (seção 8.1), inspecionar o template e só então implementar os componentes. Todo componente novo ou alterado segue o tema Carbon nos dois temas (seção 9) e o papel de filtragem cruzada da seção 8.4.1.
 5. Validar contra os números da seção 1 a cada fase e registrar o resultado em `docs/log_validacao.md`.
 6. Nunca usar dados reais de clientes; parar e perguntar se aparecer qualquer arquivo que não seja a base fictícia.
-7. Nunca versionar IDs do tenant (workspace, lakehouse, itens, capacidade, tenant), URLs de hospedagem ou chaves, exceto o endereço do OneLake em `expressions.tmdl`, que a integração Git exige: conferir o `git diff` antes de cada commit.
+7. Nunca versionar IDs do tenant (workspace, itens, capacidade, tenant), URLs de hospedagem ou chaves: conferir o `git diff` antes de cada commit.

@@ -1,5 +1,5 @@
 // Todas as consultas DAX do app (seção 8.5 do CLAUDE.md). O app só apresenta:
-// os cálculos ficam nas medidas do sm_blacksmith_dre.
+// os cálculos ficam nas medidas do blacksmith_dre.
 
 import {
     montar_filtros,

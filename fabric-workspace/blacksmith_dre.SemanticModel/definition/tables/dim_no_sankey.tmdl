@@ -1,0 +1,55 @@
+table dim_no_sankey
+	lineageTag: 95e0289b-1c3f-4597-ae59-4798683dcc07
+
+	column cod_no
+		dataType: string
+		lineageTag: 65cca572-e5f6-4f66-9c6d-72b51388abb9
+		summarizeBy: none
+		sourceColumn: cod_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_no
+		dataType: string
+		lineageTag: a89d2524-baee-4eb8-b010-bc4aa056e555
+		summarizeBy: none
+		sourceColumn: nome_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column tipo_no
+		dataType: string
+		lineageTag: be203dbe-6b6b-4d5c-93ac-3ecbbfb7a395
+		summarizeBy: none
+		sourceColumn: tipo_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column coluna_sankey
+		dataType: int64
+		formatString: 0
+		lineageTag: d9df6353-6e8f-419b-9fe5-65b42fa43d9c
+		summarizeBy: none
+		sourceColumn: coluna_sankey
+
+		annotation SummarizationSetBy = Automatic
+
+	column cor_hex
+		dataType: string
+		lineageTag: fc62b355-bedb-4856-bd24-a8ac0d27cdd1
+		summarizeBy: none
+		sourceColumn: cor_hex
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_no_sankey = m
+		mode: import
+		source =
+				let
+				    origem = ler_csv("dim_no_sankey", {
+				        {"cod_no", type text}, {"nome_no", type text}, {"tipo_no", type text},
+				        {"coluna_sankey", Int64.Type}, {"cor_hex", type text}
+				    })
+				in
+				    origem
+

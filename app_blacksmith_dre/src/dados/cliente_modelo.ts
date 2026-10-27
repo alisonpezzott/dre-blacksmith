@@ -1,4 +1,4 @@
-// Execução das consultas DAX no sm_blacksmith_dre pelo cliente do template
+// Execução das consultas DAX no blacksmith_dre pelo cliente do template
 // (FabricClient + EmbedFabricApiProxy, autenticação nativa do Fabric).
 
 import { useEffect, useRef, useState } from "react";

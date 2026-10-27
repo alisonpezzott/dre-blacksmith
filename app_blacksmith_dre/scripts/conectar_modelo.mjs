@@ -1,5 +1,5 @@
-// Liga o app ao sm_blacksmith_dre do seu workspace: grava o fabric.yaml (fora do git) a partir
-// da URL do modelo no portal do Fabric. Uso: npm run conectar -- "<URL do sm_blacksmith_dre>"
+// Liga o app ao blacksmith_dre do seu workspace: grava o fabric.yaml (fora do git) a partir
+// da URL do modelo no portal do Fabric. Uso: npm run conectar -- "<URL do blacksmith_dre>"
 
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -13,7 +13,7 @@ const cli = resolve(dirname(fileURLToPath(import.meta.resolve("@microsoft/fabric
 
 const url = process.argv[2];
 if (!url || !/\/groups\/[^/]+\/semanticmodels\/[^/?]+/i.test(url)) {
-    console.error('Uso: npm run conectar -- "<URL do sm_blacksmith_dre no portal do Fabric>"');
+    console.error('Uso: npm run conectar -- "<URL do blacksmith_dre no portal do Fabric>"');
     console.error("Abra o modelo semântico no portal e copie a URL da barra de endereço.");
     process.exit(1);
 }

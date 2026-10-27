@@ -1,0 +1,172 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "ef61d6af27826ca36af1",
+  "position": {
+    "x": 16,
+    "y": 96,
+    "z": 2000,
+    "height": 300,
+    "width": 1248,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_regiao"
+                    }
+                  },
+                  "Property": "nome_regiao"
+                }
+              },
+              "queryRef": "dim_regiao.nome_regiao",
+              "nativeQueryRef": "nome_regiao"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "clientes_ativos"
+                }
+              },
+              "queryRef": "_medidas.clientes_ativos",
+              "nativeQueryRef": "clientes_ativos"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "novos_clientes"
+                }
+              },
+              "queryRef": "_medidas.novos_clientes",
+              "nativeQueryRef": "novos_clientes"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "churn_medio_pct"
+                }
+              },
+              "queryRef": "_medidas.churn_medio_pct",
+              "nativeQueryRef": "churn_medio_pct"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "nps_medio"
+                }
+              },
+              "queryRef": "_medidas.nps_medio",
+              "nativeQueryRef": "nps_medio"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "headcount"
+                }
+              },
+              "queryRef": "_medidas.headcount",
+              "nativeQueryRef": "headcount"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "contratos_fechados"
+                }
+              },
+              "queryRef": "_medidas.contratos_fechados",
+              "nativeQueryRef": "contratos_fechados"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "receita_por_cliente"
+                }
+              },
+              "queryRef": "_medidas.receita_por_cliente",
+              "nativeQueryRef": "receita_por_cliente"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "receita_por_colaborador"
+                }
+              },
+              "queryRef": "_medidas.receita_por_colaborador",
+              "nativeQueryRef": "receita_por_colaborador"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Indicadores operacionais por região (clientes e headcount: saldo do último mês)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
