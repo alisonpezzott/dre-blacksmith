@@ -23,7 +23,7 @@ O app segue o **IBM Carbon Design System**, abre no tema escuro e tem tema claro
 - [Instalação passo a passo](#instalação-passo-a-passo)
 - [Comandos Rayfin](#comandos-rayfin)
 - [Validação](#validação)
-- [IDs do ambiente e segurança](#ids-do-ambiente-e-segurança)
+- [Segurança](#segurança)
 - [Limitações conhecidas](#limitações-conhecidas)
 - [Licença](#licença)
 
@@ -74,12 +74,14 @@ A especificação completa (dicionário de dados, todas as medidas, consultas, l
 ## Arquitetura
 
 ```
-dataset/*.csv ──► lh_blacksmith/Files/Raw/blacksmith/
-                     │  nb_01_ingestao
-                     ▼
-                tabelas Delta (lh_blacksmith/Tables/dbo)          ┐
-                     │  nb_02_qualidade (testes)                   │ pl_blacksmith_carga
-                     │  nb_03_atualizar_modelo (refresh)           ┘
+GitHub: fabric-workspace/ ──(integração Git do Fabric)──► itens do workspace
+
+dataset/*.csv (GitHub) ──► lh_blacksmith/Files/Raw/blacksmith/    ┐
+                     │  nb_01_ingestao (baixa e grava)             │
+                     ▼                                             │
+                tabelas Delta (lh_blacksmith/Tables/dbo)           │ pl_blacksmith_carga
+                     │  nb_02_qualidade (testes)                   │
+                     │  nb_03_atualizar_modelo (liga e atualiza)   ┘
                      ▼
                 sm_blacksmith_dre (Direct Lake on OneLake, DAX)
                      │  Execute Queries API (@microsoft/fabric-app-data)
@@ -87,7 +89,7 @@ dataset/*.csv ──► lh_blacksmith/Files/Raw/blacksmith/
                 app_blacksmith_dre (Fabric App, template dataapp do Rayfin)
 ```
 
-Nomes usados nos exemplos (troque se quiser):
+Nomes dos itens (vêm do Git; só o workspace você escolhe):
 
 | item | nome |
 |---|---|
@@ -103,14 +105,14 @@ Nomes usados nos exemplos (troque se quiser):
 ## Estrutura do repositório
 
 ```
-dataset/                         # 7 CSVs da base fictícia
-fabric/                          # itens do Fabric no formato Git (com marcadores de ID)
+dataset/                         # 7 CSVs da base fictícia (o nb_01 baixa daqui)
+fabric-workspace/                # itens do workspace, sincronizados pela integração Git do Fabric
+  lh_blacksmith.Lakehouse/
   nb_01_ingestao.Notebook/
   nb_02_qualidade.Notebook/
   nb_03_atualizar_modelo.Notebook/
   pl_blacksmith_carga.DataPipeline/
   sm_blacksmith_dre.SemanticModel/   # TMDL
-  ids_ambiente.py                # troca marcadores ↔ IDs do .env
 validacao/
   gerar_referencias.py           # gera referencias.json a partir de dataset/
   referencias.json               # gabarito (anual, mensal, Sankey, regiões)
@@ -121,13 +123,12 @@ app_blacksmith_dre/              # Fabric App (Vite + React 19 + TypeScript)
   src/componentes/               # cabeçalho, filtros, KPIs, Sankey, tendência, regiões, DRE…
   src/estado/                    # filtros, tema e seleção cruzada
   src/tema/                      # tokens Carbon (CSS) e paleta dos gráficos (TS)
-  scripts/                       # validar_consultas.mjs, validate-visual.mjs
+  scripts/                       # conectar_modelo.mjs, validar_consultas.mjs, validate-visual.mjs
   rayfin/rayfin.yml              # configuração do item Rayfin
-  fabric.example.yaml            # modelo do fabric.yaml (conexão com o modelo semântico)
+  fabric.example.yaml            # exemplo do fabric.yaml (conexão com o modelo, gerada por npm run conectar)
 docs/log_validacao.md            # registro das validações de cada fase
 docs/imagens/                    # prints do app publicado (capa e app inteiro)
 CLAUDE.md                        # especificação completa do projeto
-.env.example                     # modelo do .env com os IDs do ambiente
 ```
 
 O `app_blacksmith_dre/README.md` é o README original do template da Microsoft. Este arquivo é o guia do projeto.
@@ -141,134 +142,75 @@ O `app_blacksmith_dre/README.md` é o README original do template da Microsoft. 
 | requisito | por quê |
 |---|---|
 | Workspace em **capacidade Fabric** (SKU F) | Fabric Apps não funciona em capacidade compartilhada nem em Pro. |
-| Papel **Contributor**, **Member** ou **Admin** no workspace | Para criar itens, importar definições e publicar o app. |
+| Papel **Admin** no workspace | Para conectar o workspace ao Git. Para publicar o app, Contributor já basta. |
+| Conta no **GitHub** | A integração Git do Fabric sincroniza o workspace com o seu fork do repositório. |
 | Workload **Fabric Apps** habilitado no tenant | Fabric Apps está em preview e precisa ser liberado pelo administrador. |
 | Configuração **Semantic Model Execute Queries REST API** habilitada (também aparece como *Dataset Execute Queries REST API*) | O app e os scripts de validação consultam o modelo por essa API. |
 | Permissões **Build** e **Read** no modelo para quem for usar o app | O app consulta o modelo com a identidade de quem está usando. |
 
 ### Na máquina de desenvolvimento
 
+Para publicar o app bastam **Git** e **Node.js 20 ou superior** (testado com 24). O Rayfin CLI (1.36.2) já vem nas dependências do app (`npx rayfin`).
+
+As ferramentas abaixo só são necessárias para rodar a [validação](#validação):
+
 | ferramenta | versão usada | para quê | instalação |
 |---|---|---|---|
-| Git | qualquer recente | clonar o repositório | https://git-scm.com |
-| Node.js + npm | 20 ou superior (testado com 24) | app, build e Rayfin CLI | https://nodejs.org |
-| Python | 3.13 | fab CLI e scripts de `validacao/` e `fabric/` | https://www.python.org ou via `uv` |
-| uv | recente | rodar os scripts Python e instalar o fab CLI | https://docs.astral.sh/uv/ |
-| Fabric CLI (`fab`) | 1.8 | criar e importar itens, rodar jobs, consultar o modelo | `uv tool install --python 3.13 ms-fabric-cli` |
+| uv + Python | 3.13 | scripts de `validacao/` | https://docs.astral.sh/uv/ |
+| Fabric CLI (`fab`) | 1.8 | `validar_modelo.py` consulta o modelo com o login do fab | `uv tool install --python 3.13 ms-fabric-cli` |
 | Azure CLI (`az`) | recente | token para `npm run validar:consultas` e `npm run validate:visual` | https://learn.microsoft.com/cli/azure/install-azure-cli |
-| Rayfin CLI | 1.36.2 | login, deploy e status do app | já vem nas dependências do app (`npx rayfin`) |
-| VS Code | opcional | edição; o projeto foi construído com o Claude Code | https://code.visualstudio.com |
-
-O fab CLI exige Python **entre 3.10 e 3.13**. Com uma versão mais nova, a instalação pode resolver silenciosamente uma versão 0.x antiga. Por isso o comando acima fixa `--python 3.13`.
 
 ---
 
 ## Instalação passo a passo
 
-Os comandos usam a sintaxe do Bash. No PowerShell, troque `cp` por `Copy-Item` e mantenha as aspas.
+São duas partes: o workspace vem pronto do GitHub pela integração Git do Fabric, e o app é publicado da sua máquina. Nenhum ID precisa ser copiado à mão.
 
-### 1. Clonar e configurar o `.env`
+### 1. Fazer o fork do repositório
 
-```bash
-git clone <url-do-repositorio> dre-blacksmith
-cd dre-blacksmith
-cp .env.example .env
-```
+No GitHub, faça um **fork** deste repositório para a sua conta. A integração Git do Fabric precisa de um repositório em que você possa gravar.
 
-O `.env` fica fora do git e guarda os IDs do seu ambiente. Ele é preenchido ao longo dos passos abaixo.
-
-### 2. Entrar no Fabric pelo fab CLI
-
-```bash
-fab auth login
-fab auth status
-```
-
-### 3. Criar o workspace e o lakehouse
+### 2. Criar o workspace e conectar ao Git
 
 No portal do Fabric:
 
-1. Crie o workspace `ws_blacksmith_financeiro` numa capacidade Fabric.
-2. Crie o lakehouse `lh_blacksmith` com **schemas** habilitados (as tabelas vão para `dbo`).
-3. Em `Files`, crie a pasta `Raw/blacksmith` e envie os 7 CSVs de `dataset/`. O OneLake diferencia maiúsculas: o notebook lê `Files/Raw/blacksmith` (parâmetro `caminho_raw` do `nb_01`).
+1. Crie um workspace numa capacidade Fabric (por exemplo, `ws_blacksmith_financeiro`).
+2. Abra **Workspace settings → Git integration**, escolha **GitHub** e conecte ao seu fork:
+   - branch: `main`;
+   - pasta (*Git folder*): `fabric-workspace`.
+3. Confirme a sincronização. O Fabric cria o `lh_blacksmith`, os três notebooks, o `pl_blacksmith_carga` e o `sm_blacksmith_dre`.
 
-Depois, anote os IDs no `.env`:
+### 3. Rodar a carga
 
-```bash
-fab get "ws_blacksmith_financeiro.Workspace" -q id                         # -> ID_WORKSPACE
-fab get "ws_blacksmith_financeiro.Workspace/lh_blacksmith.Lakehouse" -q id  # -> ID_LAKEHOUSE
-```
+Abra o `pl_blacksmith_carga` e clique em **Run**. O pipeline:
 
-### 4. Importar e rodar os notebooks
+1. `nb_01_ingestao`: baixa os CSVs de `dataset/` do GitHub para o lakehouse e grava as 8 tabelas Delta;
+2. `nb_02_qualidade`: roda os testes e termina com `qualidade ok`;
+3. `nb_03_atualizar_modelo`: liga o modelo ao lakehouse do seu workspace e faz o refresh.
 
-Os arquivos em `fabric/` têm marcadores (`{{ID_WORKSPACE}}`, `{{ID_LAKEHOUSE}}`…) no lugar dos IDs. O script `ids_ambiente.py` gera em `.implantacao/fabric/` (fora do git) uma cópia com os IDs do seu `.env`. Na primeira vez, passe só os itens cujos IDs você já tem:
+O download usa o repositório original (parâmetro `url_dataset` do `nb_01`). Sem acesso ao GitHub, envie os 7 CSVs para `Files/Raw/blacksmith` no lakehouse e rode de novo: o notebook usa os arquivos que já estiverem lá.
 
-```bash
-uv run fabric/ids_ambiente.py implantar nb_01_ingestao.Notebook nb_02_qualidade.Notebook nb_03_atualizar_modelo.Notebook
+Opcional: nas configurações do `sm_blacksmith_dre`, desligue "Keep your Direct Lake data up to date". Assim o modelo só recebe dados novos depois que os testes de qualidade passam.
 
-fab import "ws_blacksmith_financeiro.Workspace/nb_01_ingestao.Notebook" -i .implantacao/fabric/nb_01_ingestao.Notebook --format .py -f
-fab import "ws_blacksmith_financeiro.Workspace/nb_02_qualidade.Notebook" -i .implantacao/fabric/nb_02_qualidade.Notebook --format .py -f
-fab import "ws_blacksmith_financeiro.Workspace/nb_03_atualizar_modelo.Notebook" -i .implantacao/fabric/nb_03_atualizar_modelo.Notebook --format .py -f
-
-fab job run "ws_blacksmith_financeiro.Workspace/nb_01_ingestao.Notebook"   # cria as 8 tabelas Delta
-fab job run "ws_blacksmith_financeiro.Workspace/nb_02_qualidade.Notebook"  # deve terminar com "qualidade ok"
-```
-
-Anote os IDs dos notebooks no `.env` (`ID_NB_01_INGESTAO`, `ID_NB_02_QUALIDADE`, `ID_NB_03_ATUALIZAR_MODELO`):
+### 4. Publicar o app
 
 ```bash
-fab get "ws_blacksmith_financeiro.Workspace/nb_01_ingestao.Notebook" -q id
-fab get "ws_blacksmith_financeiro.Workspace/nb_02_qualidade.Notebook" -q id
-fab get "ws_blacksmith_financeiro.Workspace/nb_03_atualizar_modelo.Notebook" -q id
-```
-
-### 5. Importar o modelo semântico e o pipeline
-
-```bash
-uv run fabric/ids_ambiente.py implantar   # agora com todos os IDs
-
-fab import "ws_blacksmith_financeiro.Workspace/sm_blacksmith_dre.SemanticModel" -i .implantacao/fabric/sm_blacksmith_dre.SemanticModel -f
-fab import "ws_blacksmith_financeiro.Workspace/pl_blacksmith_carga.DataPipeline" -i .implantacao/fabric/pl_blacksmith_carga.DataPipeline -f
-
-fab get "ws_blacksmith_financeiro.Workspace/sm_blacksmith_dre.SemanticModel" -q id   # -> ID_MODELO_SEMANTICO
-```
-
-No portal, abra as configurações do `sm_blacksmith_dre` e **desligue** "Keep your Direct Lake data up to date". Assim o modelo só recebe dados novos depois que os testes de qualidade passam, pelo `nb_03` do pipeline.
-
-### 6. Rodar a carga completa
-
-```bash
-fab job run "ws_blacksmith_financeiro.Workspace/pl_blacksmith_carga.DataPipeline"   # nb_01 → nb_02 → nb_03
-uv run validacao/validar_modelo.py                                                    # 0 falhas esperadas
-```
-
-### 7. Configurar o app
-
-```bash
-cd app_blacksmith_dre
+git clone <url-do-seu-fork> dre-blacksmith
+cd dre-blacksmith/app_blacksmith_dre
 npm install
 npx rayfin login
 
-# conexão com o modelo (gera fabric.yaml, fora do git; ver fabric.example.yaml)
-npx fabric-app-data add semanticModel modelo_dre -w <ID_WORKSPACE> -i <ID_MODELO_SEMANTICO>
+# liga o app ao modelo: abra o sm_blacksmith_dre no portal e copie a URL da barra de endereço
+npm run conectar -- "<URL do sm_blacksmith_dre>"
 
-npm run build
+npx rayfin up --workspace <nome-do-workspace> --item-name app_blacksmith_dre
 ```
 
-O nome `modelo_dre` é o alias que o código usa (`getFabricClient().semanticModel("modelo_dre")`). Mantenha esse nome.
+O `npm run conectar` grava a conexão no `fabric.yaml` do app, fora do git (exemplo em `fabric.example.yaml`). O primeiro `rayfin up` cria o item do app no workspace e grava `rayfin/.env` e `rayfin/.deployments.json`, também fora do git. Ele acrescenta ainda a URL de hospedagem do app em `allowedRedirectUris` no `rayfin/rayfin.yml`: não faça commit dessa linha.
 
-### 8. Publicar o app
+Abra o app pelo portal do Fabric, no workspace. Enquanto o recurso estiver em preview, apps ligados a modelo semântico só funcionam dentro do portal. Para conferir o deploy: `npx rayfin up status --workspace <nome-do-workspace> --item-name app_blacksmith_dre`.
 
-```bash
-npx rayfin up --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre
-npx rayfin up status --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre
-```
-
-O primeiro `rayfin up` cria o item no workspace e grava `rayfin/.env` e `rayfin/.deployments.json`, ambos fora do git. Ele também acrescenta a URL de hospedagem do app em `allowedRedirectUris` no `rayfin/rayfin.yml`: **não versione essa linha** (veja [IDs do ambiente e segurança](#ids-do-ambiente-e-segurança)).
-
-Abra o app pelo portal do Fabric, no workspace. Enquanto o recurso estiver em preview, apps ligados a modelo semântico só funcionam dentro do portal.
-
-### 9. Desenvolver localmente (opcional)
+### 5. Desenvolver localmente (opcional)
 
 ```bash
 npm run dev
@@ -294,7 +236,7 @@ Todos rodam dentro de `app_blacksmith_dre/` com `npx`, porque o Rayfin CLI já e
 | `npx rayfin docs` | Consultar a documentação dos pacotes Rayfin instalados. |
 | `npx rayfin --help` | Listar comandos e flags da versão instalada. Fabric Apps está em preview, então confira sempre. |
 
-Este app não usa `rayfin connector`, `rayfin functions` nem `rayfin secret`. A conexão com o modelo é feita pelo `@microsoft/fabric-app-data` (passo 7), e o `rayfin.yml` liga só a autenticação Fabric (SSO) e a hospedagem estática.
+Este app não usa `rayfin connector`, `rayfin functions` nem `rayfin secret`. A conexão com o modelo é feita pelo `@microsoft/fabric-app-data` (`npm run conectar`, passo 4), e o `rayfin.yml` liga só a autenticação Fabric (SSO) e a hospedagem estática.
 
 ---
 
@@ -303,7 +245,7 @@ Este app não usa `rayfin connector`, `rayfin functions` nem `rayfin secret`. A 
 | comando | onde | o que confere |
 |---|---|---|
 | `uv run validacao/gerar_referencias.py` | raiz | Regera `referencias.json` a partir dos CSVs (só se a base mudar). |
-| `uv run validacao/validar_modelo.py` | raiz | DRE anual e mensal, links do Sankey, fechamento dos nós, comparativos e regiões no modelo publicado. |
+| `uv run validacao/validar_modelo.py` | raiz | DRE anual e mensal, links do Sankey, fechamento dos nós, comparativos e regiões no modelo publicado. Usa a conexão do `fabric.yaml` do app e o login do fab CLI (`fab auth login`). |
 | `npm test` | app | Testes unitários (vitest). |
 | `npm run lint` | app | ESLint. |
 | `npm run build` | app | TypeScript e build de produção. |
@@ -322,12 +264,10 @@ Roteiro de demonstração sugerido: seção 11 do [CLAUDE.md](CLAUDE.md).
 
 ---
 
-## IDs do ambiente e segurança
+## Segurança
 
-- **Nenhum ID de tenant, workspace, item ou capacidade é versionado.**
-  - Os itens em `fabric/` usam marcadores `{{ID_*}}`, e os valores ficam no `.env`, que não é versionado.
-  - `uv run fabric/ids_ambiente.py implantar` gera a cópia com IDs em `.implantacao/`, que também não é versionada.
-- Se você exportar um item do portal (`fab export`) para dentro de `fabric/`, rode `uv run fabric/ids_ambiente.py anonimizar` **antes do commit** e confira o `git diff`.
+- **Sem `.env` e sem IDs à mão.** A conexão do app com o modelo fica no `fabric.yaml` do app (gerado por `npm run conectar`), e o `rayfin up` grava os dados do item em `rayfin/`. Nada disso é versionado.
+- **O que a integração Git versiona.** O `expressions.tmdl` do `sm_blacksmith_dre` guarda o endereço do OneLake (IDs do workspace e do lakehouse) do workspace que fez o commit. São identificadores, não credenciais, e o `nb_03` troca esse endereço pelo do seu workspace na primeira carga. Se o repositório for de um cliente, trate esses IDs como dado do ambiente dele.
 - O `rayfin up` grava a URL de hospedagem do app no `rayfin/rayfin.yml`. Remova essa linha antes do commit, ou não faça commit desse arquivo depois de um deploy.
 - O app não guarda credenciais. A autenticação é a nativa do Fabric (Entra ID), e cada usuário consulta o modelo com a própria identidade.
 - Não cole dados reais de clientes em prompts, commits, issues ou logs.

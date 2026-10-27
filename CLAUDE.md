@@ -90,7 +90,16 @@ CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
 | modelo semântico | `sm_blacksmith_dre` |
 | fabric app | `app_blacksmith_dre` |
 
-**IDs do ambiente fora do git.** Os itens em `fabric/` são versionados com marcadores (`{{ID_WORKSPACE}}`, `{{ID_LAKEHOUSE}}`, `{{ID_NB_01_INGESTAO}}`, `{{ID_NB_02_QUALIDADE}}`, `{{ID_NB_03_ATUALIZAR_MODELO}}`); os valores ficam no `.env` da raiz (modelo em `.env.example`). Antes do `fab import`, `uv run fabric/ids_ambiente.py implantar` gera em `.implantacao/fabric/` (fora do git) uma cópia com os IDs; depois de um `fab export` para `fabric/`, `uv run fabric/ids_ambiente.py anonimizar` devolve os marcadores. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
+**Workspace sincronizado pelo Git.** A pasta oficial dos itens é `fabric-workspace/`, ligada ao workspace pela integração Git do Fabric (GitHub). Quem reproduz o projeto faz o fork, conecta o próprio workspace à pasta e roda o `pl_blacksmith_carga`; não há `.env` nem ID copiado à mão. Para os itens funcionarem em qualquer workspace:
+
+- os notebooks acham o `lh_blacksmith` pelo nome (`%%configure` com `defaultLakehouse.name`), sem ID de lakehouse nos metadados;
+- o `nb_01` baixa os CSVs de `dataset/` do GitHub (parâmetro `url_dataset`) e, se o download falhar, usa os arquivos que já estiverem no lakehouse;
+- o `nb_03` religa a expressão Direct Lake ao lakehouse do próprio workspace (`getDefinition`/`updateDefinition`) antes do refresh;
+- o pipeline aponta os notebooks por `logicalId`, que a integração resolve em cada workspace.
+
+O único ID de ambiente versionado é o endereço do OneLake em `expressions.tmdl`, que a integração exige para sincronizar o workspace de origem. Para mudar um item: editar no portal e fazer commit pela integração, ou editar em `fabric-workspace/`, fazer push e usar "Update all" no workspace. A conexão do app com o modelo fica em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
+
+A pasta `fabric/` (formato anterior, com marcadores `{{ID_*}}`, `ids_ambiente.py` e `fab import`) não é mais usada e será removida depois que o app for republicado.
 
 ---
 
@@ -102,7 +111,8 @@ CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
   - [x] Workload **Fabric Apps** habilitado.
   - [x] Configuração de integração **Semantic Model Execute Queries REST API** (pode aparecer como *Dataset Execute Queries REST API*) habilitada.
 - [x] Node.js 20 ou superior e npm na máquina de desenvolvimento (usado: v24).
-- [x] Python 3.13 + `uv`; fab CLI ≥ 1.8 (`uv tool install --python 3.13 ms-fabric-cli`).
+- [x] Workspace conectado ao Git (GitHub, pasta `fabric-workspace`).
+- [x] Python 3.13 + `uv`; fab CLI ≥ 1.8 (`uv tool install --python 3.13 ms-fabric-cli`): só para `validacao/validar_modelo.py`.
 - [ ] Azure CLI logado (`az login`): exigido por `npm run validar:consultas` e `npm run validate:visual`.
 - [x] VS Code com o Claude Code.
 - [ ] Usuários finais com permissões **Build** e **Read** no `sm_blacksmith_dre` (adiado: por enquanto só o dono usa o app).
@@ -115,8 +125,8 @@ CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
 ## 5. Fase 1 — Ingestão (`nb_01_ingestao`)
 
 ### 5.1 Upload
-1. Criar o lakehouse `lh_blacksmith` (com schemas; tabelas em `dbo`).
-2. Subir os 7 CSVs de `dataset/` para `Files/Raw/blacksmith/` (no ambiente atual a pasta foi criada com "R" maiúsculo; o parâmetro `caminho_raw` do `nb_01` acompanha, e o OneLake diferencia maiúsculas).
+1. O lakehouse `lh_blacksmith` (com schemas; tabelas em `dbo`) vem da integração Git.
+2. O `nb_01` baixa os 7 CSVs de `dataset/` do GitHub (`url_dataset`) para `Files/Raw/blacksmith/` (`caminho_raw`; o OneLake diferencia maiúsculas). Se o download falhar (repositório privado, sem rede), usa os CSVs que já estiverem nessa pasta.
 
 ### 5.2 Dicionário de dados
 
@@ -137,7 +147,9 @@ Regras de sinal: `valor` sempre positivo; `valor_dre` positivo para receita e ne
 
 ### 5.3 Código do notebook
 
-Implementado em `fabric/nb_01_ingestao.Notebook/notebook-content.py` (formato Git do Fabric; importar a cópia de `.implantacao/fabric/` com `fab import … --format .py`, seção 3). Regras:
+Implementado em `fabric-workspace/nb_01_ingestao.Notebook/notebook-content.py` (formato Git do Fabric). Regras:
+
+- Primeira célula `%%configure` com o lakehouse só pelo nome (seção 3). Nas células markdown do `.py`, não deixar linha só com `#`: o Fabric junta essa linha com a seguinte e cria títulos.
 
 - Schema DDL explícito por tabela, **na ordem do cabeçalho do CSV** (a ordem dos CSVs de `dim_link_sankey`, `dim_no_sankey` e `fato_operacional` difere da ordem do dicionário), com `mode=FAILFAST` (valor que não converte derruba a leitura em vez de virar nulo) e `enforceSchema=false` (confere os nomes do cabeçalho).
 - `trim` das colunas de texto num único `select`; `dim_link_sankey.cod_conta` nulo vira `""`.
@@ -156,7 +168,7 @@ Implementado em `fabric/nb_01_ingestao.Notebook/notebook-content.py` (formato Gi
 
 ## 6. Fase 2 — Tratamento e qualidade (`nb_02_qualidade`)
 
-Testes obrigatórios. O notebook deve **falhar** (`assert`) se algum não passar. Implementado em `fabric/nb_02_qualidade.Notebook/notebook-content.py`: cada teste registra a falha e a última célula faz um único `assert` com a lista completa; se tudo passar, imprime `qualidade ok`.
+Testes obrigatórios. O notebook deve **falhar** (`assert`) se algum não passar. Implementado em `fabric-workspace/nb_02_qualidade.Notebook/notebook-content.py`: cada teste registra a falha e a última célula faz um único `assert` com a lista completa; se tudo passar, imprime `qualidade ok`.
 
 1. Contagens da seção 5.2; sem nulos nas chaves; chaves das dimensões e grão das duas fatos sem duplicidade.
 2. Integridade referencial: as relações do modelo (seção 7.2), `data` das fatos → `dim_calendario`, e os nós e contas de `dim_link_sankey`.
@@ -178,7 +190,7 @@ Também verifica: ordenação (cada rótulo com um único valor de `sortByColumn
 
 ### 7.1 Criação
 - Criar a partir do `lh_blacksmith` em modo **Direct Lake on OneLake** (expressão `AzureStorage.DataLake`), incluindo as 8 tabelas. É o tipo recomendado pela Microsoft para modelos novos e o que aceita a tabela calculada `_medidas`.
-- Definição versionada em `fabric/sm_blacksmith_dre.SemanticModel/` (TMDL). Fluxo: `fab export` → `ids_ambiente.py anonimizar` → editar o TMDL → `ids_ambiente.py implantar` → `fab import -f` (a partir de `.implantacao/fabric/`) → refresh. A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
+- Definição versionada em `fabric-workspace/sm_blacksmith_dre.SemanticModel/` (TMDL), sincronizada pela integração Git; num workspace novo, o `nb_03` religa a expressão ao lakehouse local (seção 3). A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
 - Fatos com todas as colunas ocultas (expor somente medidas); nas dimensões, ocultar as chaves `cod_*` usadas em relacionamento, `cod_grupo` e `indice_mes`. `dim_no_sankey` e `dim_link_sankey` ficam visíveis (Plano B). `discourageImplicitMeasures` ligado.
 - Ordenar colunas: `dim_calendario[mes_ano]` por `indice_mes`; `dim_calendario[nome_mes]` por `mes`; `dim_conta[nome_conta]` por `ordem_dre`; `dim_cenario[nome_cenario]` por `ordem_cenario`.
 - No modelo, `fato_lancamentos[valor]` e `[valor_dre]` são `double` (no lakehouse, `decimal(18,2)`); os relacionamentos por `data` usam `joinOnDateBehavior: datePartOnly`.
@@ -376,7 +388,7 @@ RETURN
 -- esperado: nenhuma linha
 ```
 
-**Medidas adicionais para a Fase 4** (o app só consome o modelo; definição completa em `fabric/sm_blacksmith_dre.SemanticModel/definition/tables/_medidas.tmdl`):
+**Medidas adicionais para a Fase 4** (o app só consome o modelo; definição completa em `fabric-workspace/sm_blacksmith_dre.SemanticModel/definition/tables/_medidas.tmdl`):
 
 | pasta | medidas | formato |
 |---|---|---|
@@ -398,7 +410,7 @@ RETURN
 - [x] `receita_liquida_aa` em 2025 = `receita_liquida` em 2024.
 - [x] Nenhuma medida retorna erro em um visual de tabela por `mes_ano`.
 - [ ] Modelo compartilhado com Build + Read para os usuários do app (adiado).
-- [x] Anotar `workspace_id` e `item_id` do modelo (registrados em `.env`, fora do git: `ID_WORKSPACE`, `ID_MODELO_SEMANTICO`).
+- [x] Conexão do app com o modelo em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`; `validar_modelo.py` lê os IDs desse arquivo.
 
 ---
 
@@ -411,9 +423,10 @@ npm create @microsoft/rayfin@latest -- "app_blacksmith_dre" --template dataapp
 cd app_blacksmith_dre
 npm install
 npx rayfin login
-# conexão com o modelo pelo fabric-app-data (gera fabric.yaml, fora do git; modelo em fabric.example.yaml)
-npx fabric-app-data add semanticModel modelo_dre -w <workspace-id> -i <item-id-sm_blacksmith_dre>
-npm run build    # gera src/fabric.generated.ts e o dist/
+# conexão com o modelo a partir da URL do sm_blacksmith_dre no portal
+# (scripts/conectar_modelo.mjs: gera fabric.yaml, fora do git, e src/fabric.generated.ts)
+npm run conectar -- "<URL do sm_blacksmith_dre>"
+npm run build
 ```
 
 Template `dataapp` com Rayfin CLI 1.36.2. A conexão usa o `@microsoft/fabric-app-data` (alias `modelo_dre` no `fabric.yaml`), não o `rayfin connector add`; no `rayfin/rayfin.yml` só `auth` (Fabric SSO) e `staticHosting` ficam ligados (`data`, `storage` e `functions` desligados). Reaproveitado do template, sem alteração de fluxo: autenticação Fabric (`AuthGate`, `use-auth`), `getFabricClient()`, `VegaVisual`, `DataGrid`, `useCssTheme()`, `toDataTable` e o validador headless `validate:visual`. **Não** criar outro fluxo de login.
@@ -462,6 +475,7 @@ src/
   main.tsx, App.tsx, hooks/, lib/, services/, components/   # do template
   *.spec.ts                    # testes vitest ao lado de cada módulo
 scripts/
+  conectar_modelo.mjs          # npm run conectar: grava o fabric.yaml a partir da URL do modelo
   validar_consultas.mjs        # roda as consultas reais do app e compara com validacao/referencias.json
   capturar_fixtures.mjs        # grava as fixtures dos testes
 ```
@@ -734,9 +748,9 @@ Não implementado: o Fabric App foi liberado no tenant, e o repositório não te
 ## 12. Ordem de execução para o Claude
 
 1. Confirmar com o usuário os pré‑requisitos da Fase 0 (não é possível checar o tenant sozinho).
-2. Gerar os notebooks `nb_01_ingestao`, `nb_02_qualidade` e `nb_03_atualizar_modelo` e o pipeline `pl_blacksmith_carga` em `fabric/` (formato Git do Fabric, com marcadores `{{ID_*}}` no lugar dos IDs, seção 3) e implantar com o fab CLI: `uv run fabric/ids_ambiente.py implantar`, depois `fab import … -i .implantacao/fabric/<item> --format .py -f` e `fab job run`.
-3. Gerar as medidas da seção 7.3 em TMDL (`fabric/sm_blacksmith_dre.SemanticModel/`) e implantar com `fab import -f` (a partir de `.implantacao/fabric/`), seguido de refresh.
+2. Os notebooks `nb_01_ingestao`, `nb_02_qualidade` e `nb_03_atualizar_modelo` e o pipeline `pl_blacksmith_carga` ficam em `fabric-workspace/` (formato Git do Fabric), portáveis entre workspaces (seção 3). Depois do push, o workspace recebe as mudanças com "Update all"; a carga roda pelo `pl_blacksmith_carga`.
+3. As medidas da seção 7.3 ficam em TMDL em `fabric-workspace/sm_blacksmith_dre.SemanticModel/`; depois do "Update all", rodar o pipeline (ou o `nb_03`) para o refresh.
 4. Fazer o scaffold do app (seção 8.1), inspecionar o template e só então implementar os componentes. Todo componente novo ou alterado segue o tema Carbon nos dois temas (seção 9) e o papel de filtragem cruzada da seção 8.4.1.
 5. Validar contra os números da seção 1 a cada fase e registrar o resultado em `docs/log_validacao.md`.
 6. Nunca usar dados reais de clientes; parar e perguntar se aparecer qualquer arquivo que não seja a base fictícia.
-7. Nunca versionar IDs do tenant (workspace, lakehouse, itens, capacidade, tenant), URLs de hospedagem ou chaves: antes de cada commit, `uv run fabric/ids_ambiente.py anonimizar` e conferir o `git diff`.
+7. Nunca versionar IDs do tenant (workspace, lakehouse, itens, capacidade, tenant), URLs de hospedagem ou chaves, exceto o endereço do OneLake em `expressions.tmdl`, que a integração Git exige: conferir o `git diff` antes de cada commit.
