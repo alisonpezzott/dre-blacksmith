@@ -1,1 +1,1 @@
-Just a dummy README.md to create the folder `fabric-workspace` 
+README provisório para criar a pasta `fabric-workspace` (o Git não versiona pastas vazias).
