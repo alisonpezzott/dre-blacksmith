@@ -1,0 +1,88 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.14.0/schema.json",
+  "name": "137290e256959fe574e7",
+  "position": {
+    "x": 985.36181943487259,
+    "y": 92.625775327360444,
+    "z": 4000,
+    "height": 611.33011716057888,
+    "width": 272.58442453480359,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "multiRowCard",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "lucro_liquido"
+                }
+              },
+              "queryRef": "_medidas.lucro_liquido",
+              "nativeQueryRef": "lucro_liquido"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "prejuizo_liquido"
+                }
+              },
+              "queryRef": "_medidas.prejuizo_liquido",
+              "nativeQueryRef": "prejuizo_liquido"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "sankey_desequilibrio_max"
+                }
+              },
+              "queryRef": "_medidas.sankey_desequilibrio_max",
+              "nativeQueryRef": "sankey_desequilibrio_max"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Resumo do recorte'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,236 @@
+{
+ "columns": [
+  {
+   "name": "dim_no_sankey[cod_no]",
+   "dataType": "unknown"
+  },
+  {
+   "name": "dim_no_sankey[nome_no]",
+   "dataType": "unknown"
+  },
+  {
+   "name": "dim_no_sankey[tipo_no]",
+   "dataType": "unknown"
+  },
+  {
+   "name": "dim_no_sankey[coluna_sankey]",
+   "dataType": "unknown"
+  },
+  {
+   "name": "dim_no_sankey[cor_hex]",
+   "dataType": "unknown"
+  }
+ ],
+ "rows": [
+  [
+   "licencas_de_software",
+   "Licenças de Software",
+   "receita",
+   0,
+   "#00E5FF"
+  ],
+  [
+   "cloud_assinaturas",
+   "Cloud & Assinaturas",
+   "receita",
+   0,
+   "#00E5FF"
+  ],
+  [
+   "hardware",
+   "Hardware",
+   "receita",
+   0,
+   "#00E5FF"
+  ],
+  [
+   "consultoria",
+   "Consultoria",
+   "receita",
+   0,
+   "#00E5FF"
+  ],
+  [
+   "suporte_manutencao",
+   "Suporte & Manutenção",
+   "receita",
+   0,
+   "#00E5FF"
+  ],
+  [
+   "receita_bruta",
+   "Receita Bruta",
+   "total",
+   1,
+   "#A855F7"
+  ],
+  [
+   "deducoes_da_receita",
+   "Deduções da Receita",
+   "custo",
+   2,
+   "#FF7A1A"
+  ],
+  [
+   "receita_liquida",
+   "Receita Líquida",
+   "total",
+   2,
+   "#A855F7"
+  ],
+  [
+   "custos_cpv_csp",
+   "Custos (CPV/CSP)",
+   "custo",
+   3,
+   "#FF7A1A"
+  ],
+  [
+   "impostos_sobre_vendas",
+   "Impostos sobre Vendas",
+   "custo",
+   3,
+   "#FF7A1A"
+  ],
+  [
+   "devolucoes_abatimentos",
+   "Devoluções & Abatimentos",
+   "custo",
+   3,
+   "#FF7A1A"
+  ],
+  [
+   "lucro_bruto",
+   "Lucro Bruto",
+   "lucro",
+   3,
+   "#14F1C6"
+  ],
+  [
+   "prejuizo_liquido",
+   "Prejuízo Líquido",
+   "prejuizo",
+   3,
+   "#FF3DCB"
+  ],
+  [
+   "infraestrutura_cloud",
+   "Infraestrutura Cloud",
+   "custo",
+   4,
+   "#FF7A1A"
+  ],
+  [
+   "despesas_operacionais",
+   "Despesas Operacionais",
+   "custo",
+   4,
+   "#FF7A1A"
+  ],
+  [
+   "custo_de_hardware",
+   "Custo de Hardware",
+   "custo",
+   4,
+   "#FF7A1A"
+  ],
+  [
+   "equipe_de_servicos",
+   "Equipe de Serviços",
+   "custo",
+   4,
+   "#FF7A1A"
+  ],
+  [
+   "royalties_licencas_de_terceiros",
+   "Royalties & Licenças de Terceiros",
+   "custo",
+   4,
+   "#FF7A1A"
+  ],
+  [
+   "ebitda",
+   "EBITDA",
+   "lucro",
+   4,
+   "#14F1C6"
+  ],
+  [
+   "despesas_nao_recorrentes",
+   "Despesas Não Recorrentes",
+   "custo",
+   5,
+   "#FF7A1A"
+  ],
+  [
+   "vendas_marketing",
+   "Vendas & Marketing",
+   "custo",
+   5,
+   "#FF7A1A"
+  ],
+  [
+   "pessoal_administrativo",
+   "Pessoal Administrativo",
+   "custo",
+   5,
+   "#FF7A1A"
+  ],
+  [
+   "gerais_administrativas",
+   "Gerais & Administrativas",
+   "custo",
+   5,
+   "#FF7A1A"
+  ],
+  [
+   "depreciacao_amortizacao",
+   "Depreciação & Amortização",
+   "custo",
+   5,
+   "#FF7A1A"
+  ],
+  [
+   "pesquisa_desenvolvimento",
+   "Pesquisa & Desenvolvimento",
+   "custo",
+   5,
+   "#FF7A1A"
+  ],
+  [
+   "ebit_lucro_operacional",
+   "EBIT (Lucro Operacional)",
+   "lucro",
+   5,
+   "#14F1C6"
+  ],
+  [
+   "resultado_financeiro_liquido",
+   "Resultado Financeiro Líquido",
+   "custo",
+   6,
+   "#FF7A1A"
+  ],
+  [
+   "lair",
+   "LAIR",
+   "lucro",
+   6,
+   "#14F1C6"
+  ],
+  [
+   "ir_csll",
+   "IR & CSLL",
+   "custo",
+   7,
+   "#FF7A1A"
+  ],
+  [
+   "lucro_liquido",
+   "Lucro Líquido",
+   "lucro",
+   7,
+   "#14F1C6"
+  ]
+ ]
+}

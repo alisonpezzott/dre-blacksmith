@@ -1,0 +1,9 @@
+# Exemplo do fabric.yaml (fora do git). Não edite à mão: gere com a URL do modelo no portal do Fabric:
+#   npm run bind -- "<URL do dre-sankey>"
+activeProfile: default
+profiles:
+  default:
+    semanticModels:
+      modelo_dre:
+        workspaceId: <workspace-id>
+        itemId: <item-id-dre-sankey>

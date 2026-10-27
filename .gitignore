@@ -1,0 +1,23 @@
+# Power BI
+*.pbix
+*.pbit
+.pbi/
+localSettings.json
+*.pbip.lock
+cache.abf
+
+# segredos locais: o projeto não usa .env, mas nenhum deve ser versionado
+.env
+
+# Python
+__pycache__/
+.venv/
+.ruff_cache/
+.mypy_cache/
+
+# Node (Fase 4)
+node_modules/
+
+# Cache
+.cache/
+

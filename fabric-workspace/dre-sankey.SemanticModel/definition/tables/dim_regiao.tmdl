@@ -1,0 +1,48 @@
+table dim_regiao
+	lineageTag: db886f3b-7c17-45ce-80e6-759d858f5893
+
+	column cod_regiao
+		dataType: string
+		isHidden
+		lineageTag: 66764006-a19e-4a4d-aac7-31a06300b530
+		summarizeBy: none
+		sourceColumn: cod_regiao
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_regiao
+		dataType: string
+		lineageTag: 0b7073e2-8c3b-43cf-9db6-2a69c11faefc
+		summarizeBy: none
+		sourceColumn: nome_regiao
+
+		annotation SummarizationSetBy = Automatic
+
+	column ufs
+		dataType: string
+		lineageTag: c3256999-0f6f-49f3-b0df-b2b5ba41ebb3
+		summarizeBy: none
+		sourceColumn: ufs
+
+		annotation SummarizationSetBy = Automatic
+
+	column escritorio
+		dataType: string
+		lineageTag: debae16d-c095-4e88-9cb0-eee86d085921
+		summarizeBy: none
+		sourceColumn: escritorio
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_regiao = m
+		mode: import
+		source =
+				let
+				    origem = ler_csv("dim_regiao", {
+				        {"cod_regiao", type text}, {"nome_regiao", type text}, {"ufs", type text}, {"escritorio", type text}
+				    })
+				in
+				    origem
+
+	annotation PBI_ResultType = Table
+

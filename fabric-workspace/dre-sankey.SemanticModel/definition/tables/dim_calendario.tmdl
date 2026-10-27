@@ -1,0 +1,108 @@
+table dim_calendario
+	lineageTag: 03a3deab-cd0b-4c34-94ba-638e34107364
+
+	column data
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d5f3f0f7-5a59-4282-94a1-a8e22a2ec413
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ano
+		dataType: int64
+		formatString: 0
+		lineageTag: 770f0546-85c6-4bf0-9ecf-422fc8e6effe
+		summarizeBy: none
+		sourceColumn: ano
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes
+		dataType: int64
+		formatString: 0
+		lineageTag: 36e6a72d-07c1-49ad-99ce-fb130a495c48
+		summarizeBy: none
+		sourceColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_mes
+		dataType: string
+		lineageTag: 30c195b6-71c8-44b1-a097-d0496ac7b435
+		summarizeBy: none
+		sourceColumn: nome_mes
+		sortByColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano_mes
+		dataType: string
+		lineageTag: bfbd3690-7f3a-48ae-aafb-18389efe49c1
+		summarizeBy: none
+		sourceColumn: ano_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes_ano
+		dataType: string
+		lineageTag: edbbcd81-6d4d-45d7-ab0b-ad7fee5df59e
+		summarizeBy: none
+		sourceColumn: mes_ano
+		sortByColumn: indice_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column trimestre
+		dataType: string
+		lineageTag: 72e0ad8f-a7a0-4536-9cc7-daeb107671ea
+		summarizeBy: none
+		sourceColumn: trimestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano_trimestre
+		dataType: string
+		lineageTag: 469fb4bd-f600-4ddc-a5b8-ae7eb3b38363
+		summarizeBy: none
+		sourceColumn: ano_trimestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column semestre
+		dataType: string
+		lineageTag: 20077f6b-a349-4fe2-9a48-b137468bdf83
+		summarizeBy: none
+		sourceColumn: semestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column indice_mes
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ebdd536a-6158-4136-9a0d-59c1438844e4
+		summarizeBy: none
+		sourceColumn: indice_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_calendario = m
+		mode: import
+		source =
+				let
+				    origem = ler_csv("dim_calendario", {
+				        {"data", type date}, {"ano", Int64.Type}, {"mes", Int64.Type}, {"nome_mes", type text},
+				        {"ano_mes", type text}, {"mes_ano", type text}, {"trimestre", type text},
+				        {"ano_trimestre", type text}, {"semestre", type text}
+				    }),
+				    // índice sequencial 1..36: base das comparações com o ano anterior e dos acumulados (calendário mensal)
+				    com_indice = Table.AddColumn(origem, "indice_mes", each ([ano] - 2024) * 12 + [mes], Int64.Type)
+				in
+				    com_indice
+
+	annotation PBI_ResultType = Table
+

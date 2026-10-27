@@ -1,0 +1,26 @@
+relationship 84532c4b-ae5f-4219-9947-761753961b0a
+	joinOnDateBehavior: datePartOnly
+	fromColumn: fato_lancamentos.data
+	toColumn: dim_calendario.data
+
+relationship 9d33078f-895c-4078-a5a8-4aa6fa5a2883
+	joinOnDateBehavior: datePartOnly
+	fromColumn: fato_operacional.data
+	toColumn: dim_calendario.data
+
+relationship 349f19ef-2adc-42f0-817e-ba9d0fcbf3f1
+	fromColumn: fato_lancamentos.cod_regiao
+	toColumn: dim_regiao.cod_regiao
+
+relationship a85c877d-617b-43c8-b5ef-789fc014e18d
+	fromColumn: fato_operacional.cod_regiao
+	toColumn: dim_regiao.cod_regiao
+
+relationship d5d1806e-622b-4d32-a812-4a2ed7a85a27
+	fromColumn: fato_lancamentos.cod_conta
+	toColumn: dim_conta.cod_conta
+
+relationship 3a385d70-3b9f-40aa-b8c5-e450bdc2603e
+	fromColumn: fato_lancamentos.cenario
+	toColumn: dim_cenario.cod_cenario
+
