@@ -99,7 +99,7 @@ CSVs (dataset/) ──► lh_blacksmith/Files/Raw/blacksmith/
 
 O único ID de ambiente versionado é o endereço do OneLake em `expressions.tmdl`, que a integração exige para sincronizar o workspace de origem. Para mudar um item: editar no portal e fazer commit pela integração, ou editar em `fabric-workspace/`, fazer push e usar "Update all" no workspace. A conexão do app com o modelo fica em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
 
-A pasta `fabric/` (formato anterior, com marcadores `{{ID_*}}`, `ids_ambiente.py` e `fab import`) não é mais usada e será removida depois que o app for republicado.
+A pasta `fabric/` do formato anterior (marcadores `{{ID_*}}`, `ids_ambiente.py` e `fab import`) foi removida em 27/10/2026.
 
 ---
 
