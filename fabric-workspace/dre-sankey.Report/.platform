@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "dre-sankey"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "ae87166e-f046-45e9-aa08-adf9785ddb30"
+  }
+}

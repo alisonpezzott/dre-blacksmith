@@ -49,8 +49,8 @@ Esses valores são testes da tabela `_qualidade` (seção 6). Diferença tolerad
 ## 2. Regras do projeto (obrigatórias)
 
 1. **Idioma:** português do Brasil em tudo (tabelas, colunas, medidas, pastas, textos da UI, comentários de código).
-2. **Nomenclatura:** `snake_case` em todos os identificadores: itens do workspace, tabelas, colunas, medidas, pastas de exibição, arquivos, variáveis, componentes e funções do app. Rótulos de exibição para o usuário final ficam nas colunas `nome_*` (com acentos).
-3. **Prefixos:** `dim_` dimensões, `fato_` fatos, `app_` app, `ws_` workspace. O modelo semântico e o report de conferência têm o mesmo nome, `blacksmith_dre`, sem prefixo (o tipo do item já os distingue).
+2. **Nomenclatura:** `snake_case` em todos os identificadores: tabelas, colunas, medidas, pastas de exibição, arquivos, variáveis, componentes e funções do app. Rótulos de exibição para o usuário final ficam nas colunas `nome_*` (com acentos).
+3. **Nomes:** `dim_` dimensões e `fato_` fatos. Repositório e itens do Fabric em kebab-case: repositório `fabric-app-dre-sankey`, workspace `ws-app-dre-sankey`, app `app-dre-sankey`, modelo semântico e report `dre-sankey` (mesmo nome; o tipo do item os distingue).
 4. **Segurança de dados:** nunca colar, versionar ou enviar dados reais de clientes em prompts, commits ou logs. Este projeto usa apenas dados fictícios. Se for adaptado para um cliente real, mascarar/anonimizar antes e seguir a política da Power Tuning.
 5. **Sankey dinâmico:** o valor de cada link é sempre calculado pela medida `sankey_valor` sobre os valores já agregados do filtro. Nunca somar links pré‑calculados por mês ou região, porque um mês com prejuízo somado a meses com lucro (ou uma região negativa somada a regiões positivas) mostraria lucro e prejuízo ao mesmo tempo.
 6. **Sem mock no app:** o app consome somente o modelo semântico. Se uma query falhar, mostrar estado de erro, nunca dados fictícios embutidos.
@@ -66,23 +66,23 @@ Esses valores são testes da tabela `_qualidade` (seção 6). Diferença tolerad
 Toda a engenharia fica dentro do modelo semântico: sem lakehouse, notebook ou pipeline.
 
 ```
-dataset/*.csv (GitHub, raw.githubusercontent.com)
+dataset/*.csv (GitHub)
                  │  refresh: Power Query (url_dataset + ler_csv)
                  ▼
-            blacksmith_dre  (Import, medidas DAX, tabela _qualidade)
+            dre-sankey  (Import, medidas DAX, tabela _qualidade)
                  │                       │
-                 │                       └──► blacksmith_dre (report PBIR)
+                 │                       └──► dre-sankey (report PBIR)
                  │  Execute DAX Queries API (fabric-app-data)
                  ▼
-            app_blacksmith_dre (Fabric App, template dataapp, TypeScript)
+            app-dre-sankey (Fabric App, template dataapp, TypeScript)
 ```
 
 | item | nome |
 |---|---|
-| workspace | `ws_blacksmith_financeiro` (capacidade Fabric) |
-| modelo semântico | `blacksmith_dre` |
-| report de conferência | `blacksmith_dre` |
-| fabric app | `app_blacksmith_dre` |
+| workspace | `ws-app-dre-sankey` (capacidade Fabric) |
+| modelo semântico | `dre-sankey` |
+| report de conferência | `dre-sankey` |
+| fabric app | `app-dre-sankey` |
 
 **Workspace sincronizado pelo Git.** A pasta oficial dos itens é `fabric-workspace/`, ligada ao workspace pela integração Git do Fabric (GitHub). Quem reproduz o projeto faz o fork, conecta o próprio workspace à pasta, configura a credencial **Anonymous** da fonte Web do modelo e faz o refresh. Não há `.env` nem ID versionado:
 
@@ -90,7 +90,7 @@ dataset/*.csv (GitHub, raw.githubusercontent.com)
 - o report aponta para o modelo por caminho (`definition.pbir`, `byPath`), que a integração resolve em cada workspace;
 - o modelo Import chega do Git sem dados: depois de sincronizar mudanças de tabela ou Power Query, fazer o refresh.
 
-Para mudar um item: editar no portal e fazer commit pela integração, ou editar em `fabric-workspace/`, fazer push e usar "Update all" no workspace. A conexão do app com o modelo fica em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
+Para mudar um item: editar no portal e fazer commit pela integração, ou editar em `fabric-workspace/`, fazer push e usar "Update all" no workspace. A conexão do app com o modelo fica em `app-dre-sankey/fabric.yaml` (fora do git), gerada por `npm run conectar`. O `rayfin up` acrescenta a URL de hospedagem do app em `rayfin.yml` (`allowedRedirectUris`): não versionar essa linha.
 
 Histórico: até 27/10/2026 o projeto tinha lakehouse (`lh_blacksmith`), três notebooks (`nb_01_ingestao`, `nb_02_qualidade`, `nb_03_atualizar_modelo`), o pipeline `pl_blacksmith_carga`, o modelo em Direct Lake on OneLake e a pasta `validacao/` (gabarito `referencias.json` e scripts Python). Tudo foi substituído pelo modelo Import, pela `_qualidade` e pelo report.
 
@@ -106,9 +106,9 @@ Histórico: até 27/10/2026 o projeto tinha lakehouse (`lh_blacksmith`), três n
 - [x] Node.js 20 ou superior e npm na máquina de desenvolvimento (usado: v24).
 - [x] Workspace conectado ao Git (GitHub, pasta `fabric-workspace`).
 - [ ] Azure CLI logado (`az login`): exigido por `npm run validate:visual`.
-- [ ] Credencial **Anonymous** (privacidade Public) da fonte Web `raw.githubusercontent.com` no `blacksmith_dre`.
+- [ ] Credencial **Anonymous** (privacidade Public) da fonte Web `github.com` no `dre-sankey`.
 - [x] VS Code com o Claude Code.
-- [ ] Usuários finais com permissões **Build** e **Read** no `blacksmith_dre` (adiado: por enquanto só o dono usa o app).
+- [ ] Usuários finais com permissões **Build** e **Read** no `dre-sankey` (adiado: por enquanto só o dono usa o app).
 
 > Fabric Apps está em preview. Versões usadas: Rayfin CLI 1.36.2, `@microsoft/fabric-app-data` 1.1.0,
 > `@microsoft/fabric-visuals` 4.2.0. Em versões novas, confira https://learn.microsoft.com/fabric/apps/ e `npx rayfin --help`.
@@ -118,9 +118,9 @@ Histórico: até 27/10/2026 o projeto tinha lakehouse (`lh_blacksmith`), três n
 ## 5. Fase 1 — Carga no modelo (Power Query)
 
 ### 5.1 Fonte
-O refresh do modelo `blacksmith_dre` baixa os 7 CSVs de `dataset/` do GitHub. Duas expressões compartilhadas em `expressions.tmdl`:
+O refresh do modelo `dre-sankey` baixa os 7 CSVs de `dataset/` do GitHub. Duas expressões compartilhadas em `expressions.tmdl`:
 
-- `url_dataset` (parâmetro, texto): `https://raw.githubusercontent.com/alisonpezzott/dre-blacksmith/main/dataset`. Para ler de um fork, trocar o parâmetro no serviço.
+- `url_dataset` (parâmetro, texto): `https://github.com/alisonpezzott/fabric-app-dre-sankey/raw/main/dataset`. Para ler de um fork, trocar o parâmetro no serviço.
 - `ler_csv(arquivo, tipos)` (função): `Web.Contents(url_dataset, [RelativePath = arquivo & ".csv"])` → `Csv.Document` UTF-8 → cabeçalho → confere se as colunas são exatamente as esperadas → `Text.Trim` em tudo → tipos com cultura `en-US` → **falha o refresh** se alguma linha tiver valor que não converte (o equivalente ao antigo `FAILFAST`).
 
 ### 5.2 Dicionário de dados
@@ -172,8 +172,8 @@ Substitui o antigo `nb_02_qualidade`. Recalculada a cada refresh, uma linha por 
 
 Um teste que falha não derruba o refresh (é tabela calculada); quem garante a carga é o `ler_csv`. Conferir a `_qualidade` depois de todo refresh.
 
-### 6.2 Report `blacksmith_dre`
-PBIR em `fabric-workspace/blacksmith_dre.Report/`, ligado ao modelo por `byPath`, tema base Fluent 2. Serve só para conferência (não é o Plano B):
+### 6.2 Report `dre-sankey`
+PBIR em `fabric-workspace/dre-sankey.Report/`, ligado ao modelo por `byPath`, tema base Fluent 2. Serve só para conferência (não é o Plano B):
 
 | página | conteúdo |
 |---|---|
@@ -192,11 +192,11 @@ Nas páginas com segmentador de cenário, ele é de seleção única e começa e
 
 ---
 
-## 7. Fase 3 — Modelo semântico (`blacksmith_dre`)
+## 7. Fase 3 — Modelo semântico (`dre-sankey`)
 
 ### 7.1 Criação
 - Modo **Import**, com as 8 tabelas carregadas pelo Power Query (seção 5) e as tabelas calculadas `_medidas` e `_qualidade`.
-- Definição versionada em `fabric-workspace/blacksmith_dre.SemanticModel/` (TMDL), sincronizada pela integração Git. A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
+- Definição versionada em `fabric-workspace/dre-sankey.SemanticModel/` (TMDL), sincronizada pela integração Git. A `culture` fica em `en-US`: o serviço não permite trocar o idioma de um modelo existente, e as format strings já são explícitas.
 - Fatos com todas as colunas ocultas (expor somente medidas); nas dimensões, ocultar as chaves `cod_*` usadas em relacionamento, `cod_grupo` e `indice_mes`. `dim_no_sankey` e `dim_link_sankey` ficam visíveis (Plano B). `discourageImplicitMeasures` ligado.
 - Ordenar colunas: `dim_calendario[mes_ano]` por `indice_mes`; `dim_calendario[nome_mes]` por `mes`; `dim_conta[nome_conta]` por `ordem_dre`; `dim_cenario[nome_cenario]` por `ordem_cenario`.
 - `fato_lancamentos[valor]` e `[valor_dre]` são `double`; os relacionamentos por `data` usam `joinOnDateBehavior: datePartOnly`.
@@ -394,7 +394,7 @@ RETURN
 -- esperado: nenhuma linha
 ```
 
-**Medidas adicionais para a Fase 4** (o app só consome o modelo; definição completa em `fabric-workspace/blacksmith_dre.SemanticModel/definition/tables/_medidas.tmdl`):
+**Medidas adicionais para a Fase 4** (o app só consome o modelo; definição completa em `fabric-workspace/dre-sankey.SemanticModel/definition/tables/_medidas.tmdl`):
 
 | pasta | medidas | formato |
 |---|---|---|
@@ -417,22 +417,22 @@ RETURN
 - [x] `receita_liquida_aa` em 2025 = `receita_liquida` em 2024.
 - [x] Nenhuma medida retorna erro em um visual de tabela por `mes_ano`.
 - [ ] Modelo compartilhado com Build + Read para os usuários do app (adiado).
-- [x] Conexão do app com o modelo em `app_blacksmith_dre/fabric.yaml` (fora do git), gerada por `npm run conectar`.
+- [x] Conexão do app com o modelo em `app-dre-sankey/fabric.yaml` (fora do git), gerada por `npm run conectar`.
 
 ---
 
-## 8. Fase 4 — Fabric App (`app_blacksmith_dre`)
+## 8. Fase 4 — Fabric App (`app-dre-sankey`)
 
 ### 8.1 Scaffold
 
 ```bash
-npm create @microsoft/rayfin@latest -- "app_blacksmith_dre" --template dataapp
-cd app_blacksmith_dre
+npm create @microsoft/rayfin@latest -- "app-dre-sankey" --template dataapp
+cd app-dre-sankey
 npm install
 npx rayfin login
-# conexão com o modelo a partir da URL do blacksmith_dre no portal
+# conexão com o modelo a partir da URL do dre-sankey no portal
 # (scripts/conectar_modelo.mjs: gera fabric.yaml, fora do git, e src/fabric.generated.ts)
-npm run conectar -- "<URL do blacksmith_dre>"
+npm run conectar -- "<URL do dre-sankey>"
 npm run build
 ```
 
@@ -652,8 +652,8 @@ Barras do valor mensal (contorno vermelho nos meses de prejuízo) e linha roxa t
 Regras: verificar o `status` de cada resposta antes de passar colunas e linhas aos visuais; disparar as queries em paralelo; não duplicar queries.
 
 ### 8.6 Deploy e distribuição
-- Validar localmente: `npm run build`, `npm test`, `npm run lint` e `npm run validate:visual -- <fábrica.ts> <contexto-json>` (render headless dos specs com dados reais; exige `az login`). Os números do app se conferem com o `blacksmith_dre` no mesmo recorte.
-- Publicar: `npx rayfin up --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre` e conferir com `npx rayfin up status --workspace ws_blacksmith_financeiro --item-name app_blacksmith_dre`. O deploy grava `rayfin/.deployments.json` e `rayfin/.env` (fora do git) e acrescenta a URL de hospedagem em `rayfin.yml` (não versionar).
+- Validar localmente: `npm run build`, `npm test`, `npm run lint` e `npm run validate:visual -- <fábrica.ts> <contexto-json>` (render headless dos specs com dados reais; exige `az login`). Os números do app se conferem com o `dre-sankey` no mesmo recorte.
+- Publicar: `npx rayfin up --workspace ws-app-dre-sankey --item-name app-dre-sankey` e conferir com `npx rayfin up status --workspace ws-app-dre-sankey --item-name app-dre-sankey`. O deploy grava `rayfin/.deployments.json` e `rayfin/.env` (fora do git) e acrescenta a URL de hospedagem em `rayfin.yml` (não versionar).
 - Desenvolvimento: `npm run dev` (o `predev` roda `rayfin env`, que lê o `rayfin/.env` criado pelo primeiro `rayfin up`); abrir o item no portal com `&devUri=http://localhost:5173` no fim da URL.
 - Limitação atual do preview: apps ligados a modelo semântico só funcionam abertos dentro do portal do Fabric.
 - Opcional (não feito): incluir o app e o modelo num **org app** do workspace para distribuição com audiências.
@@ -732,9 +732,9 @@ A coluna `dim_no_sankey[cor_hex]` ainda guarda a paleta antiga (neon) e só serv
 
 ## 10. Plano B — relatório Power BI (low‑code)
 
-Se o Fabric App não estiver liberado no tenant, publicar um relatório (por exemplo, `blacksmith_dre_sankey`) sobre o mesmo modelo `blacksmith_dre` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4, a filtragem cruzada nativa do Power BI (mesmos papéis da seção 8.4.1: Sankey só destaca) e dois temas JSON (escuro g100 e claro g10) com as cores e a fonte IBM Plex da seção 9. Distribuir via org app.
+Se o Fabric App não estiver liberado no tenant, publicar um relatório (por exemplo, `dre-sankey-plano-b`) sobre o mesmo modelo `dre-sankey` com o visual Sankey do AppSource, usando `dim_link_sankey[cod_no_origem]`, `dim_link_sankey[cod_no_destino]` e `[sankey_valor]` (a mesma lógica de prejuízo funciona no relatório), o mesmo layout da seção 8.4, a filtragem cruzada nativa do Power BI (mesmos papéis da seção 8.4.1: Sankey só destaca) e dois temas JSON (escuro g100 e claro g10) com as cores e a fonte IBM Plex da seção 9. Distribuir via org app.
 
-Não implementado: o Fabric App foi liberado no tenant. O report `blacksmith_dre` (seção 6.2) não é o Plano B: só tabelas para conferência, sem Sankey nem temas.
+Não implementado: o Fabric App foi liberado no tenant. O report `dre-sankey` (seção 6.2) não é o Plano B: só tabelas para conferência, sem Sankey nem temas.
 
 ---
 
@@ -753,9 +753,9 @@ Não implementado: o Fabric App foi liberado no tenant. O report `blacksmith_dre
 ## 12. Ordem de execução para o Claude
 
 1. Confirmar com o usuário os pré‑requisitos da Fase 0 (não é possível checar o tenant sozinho).
-2. Carga, medidas e testes ficam em TMDL em `fabric-workspace/blacksmith_dre.SemanticModel/`; o report, em PBIR em `fabric-workspace/blacksmith_dre.Report/`. Depois do push, o workspace recebe as mudanças com "Update all"; em seguida, refresh do modelo.
+2. Carga, medidas e testes ficam em TMDL em `fabric-workspace/dre-sankey.SemanticModel/`; o report, em PBIR em `fabric-workspace/dre-sankey.Report/`. Depois do push, o workspace recebe as mudanças com "Update all"; em seguida, refresh do modelo.
 3. Mudou tabela, coluna ou Power Query: conferir que a `_qualidade` continua com 0 falhas e que o report não referencia campo removido.
 4. Fazer o scaffold do app (seção 8.1), inspecionar o template e só então implementar os componentes. Todo componente novo ou alterado segue o tema Carbon nos dois temas (seção 9) e o papel de filtragem cruzada da seção 8.4.1.
-5. Validar contra os números da seção 1 a cada fase e registrar o resultado em `docs/log_validacao.md`.
+5. Validar contra os números da seção 1 a cada fase.
 6. Nunca usar dados reais de clientes; parar e perguntar se aparecer qualquer arquivo que não seja a base fictícia.
 7. Nunca versionar IDs do tenant (workspace, itens, capacidade, tenant), URLs de hospedagem ou chaves: conferir o `git diff` antes de cada commit.

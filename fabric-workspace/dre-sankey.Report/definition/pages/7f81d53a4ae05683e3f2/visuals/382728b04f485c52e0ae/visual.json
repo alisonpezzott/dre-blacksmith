@@ -1,0 +1,186 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "382728b04f485c52e0ae",
+  "position": {
+    "x": 16,
+    "y": 16,
+    "z": 0,
+    "height": 300,
+    "width": 1248,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_calendario"
+                    }
+                  },
+                  "Property": "ano"
+                }
+              },
+              "queryRef": "dim_calendario.ano",
+              "nativeQueryRef": "ano"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_cenario"
+                    }
+                  },
+                  "Property": "nome_cenario"
+                }
+              },
+              "queryRef": "dim_cenario.nome_cenario",
+              "nativeQueryRef": "nome_cenario"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "receita_bruta"
+                }
+              },
+              "queryRef": "_medidas.receita_bruta",
+              "nativeQueryRef": "receita_bruta"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "receita_liquida"
+                }
+              },
+              "queryRef": "_medidas.receita_liquida",
+              "nativeQueryRef": "receita_liquida"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "lucro_bruto"
+                }
+              },
+              "queryRef": "_medidas.lucro_bruto",
+              "nativeQueryRef": "lucro_bruto"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "ebitda"
+                }
+              },
+              "queryRef": "_medidas.ebitda",
+              "nativeQueryRef": "ebitda"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "ebit"
+                }
+              },
+              "queryRef": "_medidas.ebit",
+              "nativeQueryRef": "ebit"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "lair"
+                }
+              },
+              "queryRef": "_medidas.lair",
+              "nativeQueryRef": "lair"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "lucro_liquido"
+                }
+              },
+              "queryRef": "_medidas.lucro_liquido",
+              "nativeQueryRef": "lucro_liquido"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_medidas"
+                    }
+                  },
+                  "Property": "margem_liquida"
+                }
+              },
+              "queryRef": "_medidas.margem_liquida",
+              "nativeQueryRef": "margem_liquida"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Subtotais da DRE por ano e cenário'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

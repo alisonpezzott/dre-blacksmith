@@ -1,0 +1,144 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.12.0/schema.json",
+  "name": "fd7ae69e22e8da8ccafe",
+  "position": {
+    "x": 16,
+    "y": 112,
+    "z": 2000,
+    "height": 592,
+    "width": 1248,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "grupo"
+                }
+              },
+              "queryRef": "_qualidade.grupo",
+              "nativeQueryRef": "grupo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "teste"
+                }
+              },
+              "queryRef": "_qualidade.teste",
+              "nativeQueryRef": "teste"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "esperado"
+                }
+              },
+              "queryRef": "_qualidade.esperado",
+              "nativeQueryRef": "esperado"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "obtido"
+                }
+              },
+              "queryRef": "_qualidade.obtido",
+              "nativeQueryRef": "obtido"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "diferenca"
+                }
+              },
+              "queryRef": "_qualidade.diferenca",
+              "nativeQueryRef": "diferenca"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "tolerancia"
+                }
+              },
+              "queryRef": "_qualidade.tolerancia",
+              "nativeQueryRef": "tolerancia"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_qualidade"
+                    }
+                  },
+                  "Property": "status"
+                }
+              },
+              "queryRef": "_qualidade.status",
+              "nativeQueryRef": "status"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Testes (status falha quando |obtido − esperado| > tolerância)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

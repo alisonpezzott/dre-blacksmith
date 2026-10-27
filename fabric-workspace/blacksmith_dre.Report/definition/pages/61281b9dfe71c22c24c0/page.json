@@ -1,8 +1,0 @@
-{
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
-  "name": "61281b9dfe71c22c24c0",
-  "displayName": "Sankey",
-  "displayOption": "FitToPage",
-  "height": 720,
-  "width": 1280
-}
