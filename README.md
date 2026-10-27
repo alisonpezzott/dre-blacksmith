@@ -150,7 +150,16 @@ O `app_blacksmith_dre/README.md` é o README original do template da Microsoft. 
 
 ### Na máquina de desenvolvimento
 
-Para publicar o app bastam **Git** e **Node.js 20 ou superior** (testado com 24). O Rayfin CLI (1.36.2) já vem nas dependências do app (`npx rayfin`).
+Para publicar o app, instale só estas duas ferramentas:
+
+| ferramenta | versão usada | para quê | instalação |
+|---|---|---|---|
+| Git | qualquer recente | clonar o seu fork | https://git-scm.com |
+| Node.js (inclui o npm) | 20 ou superior (testado com 24) | instalar as dependências, fazer o build e publicar o app | https://nodejs.org (versão LTS) |
+
+Confira com `node --version` e `git --version`.
+
+**O Rayfin não precisa ser instalado.** Rayfin é a ferramenta da Microsoft que cria e publica Fabric Apps. Ela é uma dependência do app (versão 1.36.2, em `app_blacksmith_dre/package.json`): o `npm install` baixa o Rayfin junto com o resto, e o `npx rayfin …` roda essa cópia local. Não use `npm install -g`.
 
 As ferramentas abaixo só são necessárias para rodar a [validação](#validação):
 
@@ -197,14 +206,21 @@ Opcional: nas configurações do `sm_blacksmith_dre`, desligue "Keep your Direct
 ```bash
 git clone <url-do-seu-fork> dre-blacksmith
 cd dre-blacksmith/app_blacksmith_dre
+
+# baixa as dependências do app, incluindo o Rayfin (alguns minutos na primeira vez)
 npm install
+
+# abre o navegador para entrar com a sua conta do Fabric
 npx rayfin login
 
 # liga o app ao modelo: abra o sm_blacksmith_dre no portal e copie a URL da barra de endereço
 npm run conectar -- "<URL do sm_blacksmith_dre>"
 
+# faz o build e publica o app no workspace
 npx rayfin up --workspace <nome-do-workspace> --item-name app_blacksmith_dre
 ```
+
+No PowerShell, os comandos são os mesmos.
 
 O `npm run conectar` grava a conexão no `fabric.yaml` do app, fora do git (exemplo em `fabric.example.yaml`). O primeiro `rayfin up` cria o item do app no workspace e grava `rayfin/.env` e `rayfin/.deployments.json`, também fora do git. Ele acrescenta ainda a URL de hospedagem do app em `allowedRedirectUris` no `rayfin/rayfin.yml`: não faça commit dessa linha.
 
