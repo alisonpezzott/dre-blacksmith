@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_03_atualizar_modelo",
+    "description": "Refresh do sm_blacksmith_dre depois dos testes de qualidade"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c46dbc01-f197-a4a2-4c34-82f7686ab03d"
+  }
+}

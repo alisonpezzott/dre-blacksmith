@@ -1,0 +1,108 @@
+table dim_calendario
+	lineageTag: 03a3deab-cd0b-4c34-94ba-638e34107364
+	sourceLineageTag: [dbo].[dim_calendario]
+
+	column data
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: d5f3f0f7-5a59-4282-94a1-a8e22a2ec413
+		sourceLineageTag: data
+		summarizeBy: none
+		sourceColumn: data
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano
+		dataType: int64
+		formatString: 0
+		lineageTag: 770f0546-85c6-4bf0-9ecf-422fc8e6effe
+		sourceLineageTag: ano
+		summarizeBy: none
+		sourceColumn: ano
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes
+		dataType: int64
+		formatString: 0
+		lineageTag: 36e6a72d-07c1-49ad-99ce-fb130a495c48
+		sourceLineageTag: mes
+		summarizeBy: none
+		sourceColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column nome_mes
+		dataType: string
+		lineageTag: 30c195b6-71c8-44b1-a097-d0496ac7b435
+		sourceLineageTag: nome_mes
+		summarizeBy: none
+		sourceColumn: nome_mes
+		sortByColumn: mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano_mes
+		dataType: string
+		lineageTag: bfbd3690-7f3a-48ae-aafb-18389efe49c1
+		sourceLineageTag: ano_mes
+		summarizeBy: none
+		sourceColumn: ano_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column mes_ano
+		dataType: string
+		lineageTag: edbbcd81-6d4d-45d7-ab0b-ad7fee5df59e
+		sourceLineageTag: mes_ano
+		summarizeBy: none
+		sourceColumn: mes_ano
+		sortByColumn: indice_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	column trimestre
+		dataType: string
+		lineageTag: 72e0ad8f-a7a0-4536-9cc7-daeb107671ea
+		sourceLineageTag: trimestre
+		summarizeBy: none
+		sourceColumn: trimestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column ano_trimestre
+		dataType: string
+		lineageTag: 469fb4bd-f600-4ddc-a5b8-ae7eb3b38363
+		sourceLineageTag: ano_trimestre
+		summarizeBy: none
+		sourceColumn: ano_trimestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column semestre
+		dataType: string
+		lineageTag: 20077f6b-a349-4fe2-9a48-b137468bdf83
+		sourceLineageTag: semestre
+		summarizeBy: none
+		sourceColumn: semestre
+
+		annotation SummarizationSetBy = Automatic
+
+	column indice_mes
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ebdd536a-6158-4136-9a0d-59c1438844e4
+		sourceLineageTag: indice_mes
+		summarizeBy: none
+		sourceColumn: indice_mes
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_calendario = entity
+		mode: directLake
+		source
+			entityName: dim_calendario
+			schemaName: dbo
+			expressionSource: 'DirectLake - lh_blacksmith'
+

@@ -1,0 +1,9 @@
+expression 'DirectLake - lh_blacksmith' =
+		let
+		    Source = AzureStorage.DataLake("https://onelake.dfs.fabric.microsoft.com/45307096-4208-4180-a75b-8846fc8f9e24/1beff059-8511-4959-99b1-a272a637573e", [HierarchicalNavigation=true])
+		in
+		    Source
+	lineageTag: c044825f-37c9-4f6e-b9b6-87c395632fc7
+
+	annotation PBI_IncludeFutureArtifacts = False
+

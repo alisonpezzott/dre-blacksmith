@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_01_ingestao",
+    "description": "Ingestão dos CSVs da Blacksmith em tabelas Delta do lh_blacksmith"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "7b87193f-9570-aa75-40aa-c41c460ae5f8"
+  }
+}
